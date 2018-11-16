@@ -4,7 +4,8 @@
 #include <utility>
 
 //Need to change this to our actual HTTP version (whatever it is).  
-const std::string HTTP_VERSION = "?";
+const std::string HTTP_VERSION = "HTTP/v1.1";
+const unsigned MAX_MESSAGE_SIZE = 1024;
 
 
 // Takes in a void pointer and an unsigned int, and creates a string out of the first *size* bytes at the void pointer.  
@@ -20,9 +21,9 @@ struct HTTP_request {
 	~HTTP_request();
 
 	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
-	void parse_raw (char* raw);
+	void parse_raw_request (char* raw);
 
-	char* to_cstring();
+	const char* to_cstring();
 
 	std::string verb;
 	std::string URI;
@@ -36,9 +37,9 @@ struct HTTP_response {
 	~HTTP_response();
 
 	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
-	void parse_raw(const char* raw);
+	void parse_raw_response(char* raw);
 
-	char* to_cstring();
+	const char* to_cstring();
 
 	std::string version;
 	std::string code;
@@ -48,7 +49,7 @@ struct HTTP_response {
 
 struct JSON {
 	JSON ();
-	~JON () {}
+	~JSON ();
 	void parse_string(std::string);
 	std::string to_string();
 	void add (std::string key, void* val, unsigned size);
