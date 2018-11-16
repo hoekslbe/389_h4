@@ -10,9 +10,9 @@ const std::string HTTP_VERSION = "?";
 // Takes in a void pointer and an unsigned int, and creates a string out of the first *size* bytes at the void pointer.  
 std::string val_to_string(const void* val, const unsigned size);
 
-// Takes in a string, and returns a val/size pair where val is a void pointer pointing to a copy of the bytes of the string, and size is the number of bytes pointed to by val.  
-// Note: allocates memory (val).  
-std::pair<void*, unsigned> string_to_val(std::string s);
+// Takes in a string (s) and an unsigned int reference (size).  Returns a void pointer pointing to a copy of the bytes of s, and sets size to the number of bytes pointed to by the void pointer.  
+// Note: allocates memory.  
+void* string_to_val(std::string s, unsigned &size);
 
 struct HTTP_request {
 	HTTP_request();

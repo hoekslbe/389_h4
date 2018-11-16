@@ -9,14 +9,13 @@ std::string val_to_string(const void* val, const unsigned size) {
 	return converted_string;
 }
 
-std::pair<void*, unsigned> string_to_val (std::string s) {
+void* string_to_val (std::string s, unsigned &size) {
 	char* interim_conversion_string = s.c_str();
-	unsigned size = strlen(interim_conversion_string);
+	size = strlen(interim_conversion_string);
 	void* val = operator new(size);
 	memcpy(val, (void*) interim_conversion_string, size);
-	return std::make_pair(val, size);
+	return val;
 }
-
 
 struct HTTP_request {
 	HTTP_request() {
