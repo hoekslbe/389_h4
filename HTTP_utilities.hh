@@ -22,7 +22,7 @@ struct HTTP_request {
 	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
 	void parse_raw (char* raw);
 
-	const char* to_cstring();
+	char* to_cstring();
 
 	std::string verb;
 	std::string URI;
@@ -38,7 +38,7 @@ struct HTTP_response {
 	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
 	void parse_raw(const char* raw);
 
-	const char* to_cstring();
+	char* to_cstring();
 
 	std::string version;
 	std::string code;
@@ -51,6 +51,7 @@ struct JSON {
 	~JON () {}
 	void parse_string(std::string);
 	std::string to_string();
-	void add (std::string key, void* value, unsigned size);
-	std::unordered_map<std::string, char*> kv_map_;
+	void add (std::string key, void* val, unsigned size);
+	std::unordered_map<std::string, std::string>::iterator find(std::string key);
+	std::unordered_map<std::string, std::string> kv_map_;
 };

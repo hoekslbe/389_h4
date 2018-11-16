@@ -17,63 +17,81 @@ void* string_to_val (std::string s, unsigned &size) {
 	return val;
 }
 
-struct HTTP_request {
-	HTTP_request() {
-		verb = "";
-		URI = "";
-		version = HTTP_VERSION;
-		header = "";
-		body = "";
-	}
 
-	~HTTP_request() {}
+HTTP_request::HTTP_request() {
+	verb = "";
+	URI = "";
+	version = HTTP_VERSION;
+	header = "";
+	body = "";
+}
 
-	void parse_request (char* raw) {
+HTTP_request::~HTTP_request() {}
 
+void HTTP_request::parse_request (char* raw) {
+	const char* newline_delimiter = "\n";
+	const char* space_delimiter = " ";
+	verb = strtok(raw, space_delimiter);
+	URI = strtok(nullptr, space_delimiter);
+	version = strtok(nullptr, newline_delimiter);
+	header = strtok(nullptr, newline_delimiter);
+	body = strtok(nullptr, newline_delimiter);	
+}
+
+char* HTTP_request::to_cstring() {
+	return (verb_ + " " + URI_ + " " + version_ + "\n" 
+		+ header_ + "\n" 
+		+ body_ + "\n").c_str();
+}
+
+
+HTTP_response::HTTP_response() {}
+HTTP_response::~HTTP_response(){}
+
+void HTTP_response::parse_response (char* raw) {
+	const char* newline_delimiter = "\n";
+	const char* space_delimiter = " ";
+	version = strtok(raw, space_delimiter);
+	code = strtok(nullptr, newline_delimiter);
+	header = strtok(nullptr, newline_delimiter);
+	body = strtok(nullptr, newline_delimiter);	
+}
+
+char* HTTP_response::to_cstring() {
+	return (version_ + " " + code_ + "\n"
+		+ header_ + "\n"
+		+ body_ + "\n").c_str();
+}
+
+
+JSON::JSON () {}
+JSON::~JON () {}
+void JSON::parse_string(std::string) {
 	
+}
+
+std::unordered_map<std::string, std::string>::iterator JSON::find(std::string key) {
+	return kv_map_.find(key);
+}
+std::string JSON::to_string(){
+	std::string to_return = "{ ";
+	auto kv_it = kv_map_.begin();
+	if (kv_it != kv_map_.end()) {
+		to_return += kv_it.first + ":" + kv_it->second;
 	}
-
-	const char* to_cstring() {
-		return (verb_ + " " + URI_ + " " + version_ + "\n" 
-			+ header_ + "\n" 
-			+ body_).c_string();
+	kv_it++;
+	while (kv_it != kv_map_.end()) {
+		to_return += ", "+ kv_it->first + ":"+ kv_it->second;
+		kv_it++
 	}
+	to_return = to_return + " }";
+	return to_return;
+}
 
-	std::string verb;
-	std::string URI;
-	std::string version;
-	std::string header;
-	std::string body;
-};
+void JSON::add(std::string key, void* val, unsigned size) {
+	kv_map_[key] = val_to_string(val, size);
+}
 
-struct HTTP_response {
-	HTTP_response() {}
-	~HTTP_response(){}
-
-	void parse_response(const char* raw) {
-		
-	}
-
-	const char* to_cstring() {
-		return (version_ + " " + code_ + "\n"
-			+ header_ + "\n"
-			+ body_).c_string();
-	}
-
-	std::string version;
-	std::string code;
-	std::string header;
-	std::string body;
-};
-
-struct JSON {
-	JSON () {}
-	~JON () {}
-	void parse_string(std::string) {}
-	std::string to_string(){}
-	void add (std::string key, void* value, unsigned size) {}
-	std::unordered_map<std::string, char*> kv_map_;
-};
 
 std::unordered_map<std::string, char*> parse_JSON (char* obj) { // remember: this is just going to be a bunch of pointers into the buffer.  
 	std::unordered_map <char*, char*> kv_pair_map;
