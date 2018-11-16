@@ -1,15 +1,26 @@
 #include <cstring>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
+//Need to change this to our actual HTTP version (whatever it is).  
 const std::string HTTP_VERSION = "?";
+
+
+// Takes in a void pointer and an unsigned int, and creates a string out of the first *size* bytes at the void pointer.  
+std::string val_to_string(const void* val, const unsigned size);
+
+// Takes in a string, and returns a val/size pair where val is a void pointer pointing to a copy of the bytes of the string, and size is the number of bytes pointed to by val.  
+// Note: allocates memory (val).  
+std::pair<void*, unsigned> string_to_val(std::string s);
 
 struct HTTP_request {
 	HTTP_request();
 
 	~HTTP_request();
 
-	void parse_request (char* raw);
+	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
+	void parse_raw (char* raw);
 
 	const char* to_cstring();
 
@@ -24,7 +35,8 @@ struct HTTP_response {
 	HTTP_response();
 	~HTTP_response();
 
-	void parse_response(const char* raw);
+	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
+	void parse_raw(const char* raw);
 
 	const char* to_cstring();
 

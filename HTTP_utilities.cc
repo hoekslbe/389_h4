@@ -1,6 +1,22 @@
 #include "HTTP_utilities.hh"
 
 
+std::string val_to_string(const void* val, const unsigned size) {
+	char interim_conversion_string[size + 1];
+	memset(interim_conversion_string, '\0', size + 1);
+	memcpy((void*) interim_conversion_string, val, size);
+	std::string converted_string(interim_conversion_string);
+	return converted_string;
+}
+
+std::pair<void*, unsigned> string_to_val (std::string s) {
+	char* interim_conversion_string = s.c_str();
+	unsigned size = strlen(interim_conversion_string);
+	void* val = operator new(size);
+	memcpy(val, (void*) interim_conversion_string, size);
+	return std::make_pair(val, size);
+}
+
 
 struct HTTP_request {
 	HTTP_request() {
