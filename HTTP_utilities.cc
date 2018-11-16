@@ -66,8 +66,14 @@ char* HTTP_response::to_cstring() {
 
 JSON::JSON () {}
 JSON::~JON () {}
-void JSON::parse_string(std::string) {
-	
+void JSON::parse_string(std::string s) {
+	char* to_parse = s.c_str();
+	const char* delimiters = "{ ,:}";
+	string k = "";
+	char* token = strtok (to_parse, delimiters);
+	while (token != nullptr){
+		if k == 
+	}
 }
 
 std::unordered_map<std::string, std::string>::iterator JSON::find(std::string key) {
