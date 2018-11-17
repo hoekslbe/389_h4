@@ -1,5 +1,5 @@
 #include "HTTP_utilities.hh"
-
+#include <iostream>
 
 std::string val_to_string(const void* val, const unsigned size) {
 	char interim_conversion_string[1024];
@@ -11,7 +11,7 @@ std::string val_to_string(const void* val, const unsigned size) {
 
 void* string_to_val (std::string s, unsigned &size) {
 	const char* interim_conversion_string = s.c_str();
-	size = strlen(interim_conversion_string);
+	size = s.length();
 	void* val = operator new(size);
 	memcpy(val, (void*) interim_conversion_string, size);
 	return val;
@@ -19,53 +19,98 @@ void* string_to_val (std::string s, unsigned &size) {
 
 
 HTTP_request::HTTP_request() {
-	verb = "";
-	URI = "";
+	verb = " ";
+	URI = " ";
 	version = HTTP_VERSION;
-	header = "";
-	body = "";
+	body = " ";
 }
 
 HTTP_request::~HTTP_request() {}
 
 void HTTP_request::parse_raw_request (char* raw) {
-	const char* newline_delimiter = "\n";
-	const char* space_delimiter = " ";
-	verb = strtok(raw, space_delimiter);
-	URI = strtok(nullptr, space_delimiter);
-	version = strtok(nullptr, newline_delimiter);
-	header = strtok(nullptr, newline_delimiter);
-	body = strtok(nullptr, newline_delimiter);	
+	printf("%s\n",raw);
+	std::cout<<"1\n";
+	const char* delimiter = "\n";
+	char* token;
+	std::cout<<"1.5\n";
+	token = strtok(raw, delimiter);
+	verb = token;
+	std::cout<<"2\n";
+	token = strtok(nullptr, delimiter);
+	URI = token;
+	std::cout<<"3\n";
+	token = strtok(nullptr, delimiter);
+	version = token;
+	std::cout<<"4\n";
+	token = strtok(nullptr, delimiter);
+	while ((token[0] != ' ') && (token[0] != '\0')) {
+		std::cout<<"5\n";
+		std::string s(token);
+		header_lines.push_back(s);
+		token = strtok(nullptr, delimiter);
+	}
+	std::cout<<"6\n";
+	token = strtok(nullptr, delimiter);
+	body = token;
+	std::cout<<"7\n";
 }
 
-const char* HTTP_request::to_cstring() {
-	return (verb + " " + URI + " " + version + "\n" 
-		+ header + "\n" 
-		+ body + "\n").c_str();
+std::string HTTP_request::to_string() {
+	std::string to_return = "";
+	to_return += verb + "\n";
+	to_return += URI + "\n";
+	to_return += version + "\n";
+	for (auto h : header_lines) {
+		to_return += h + "\n";
+	}
+	to_return += " \n";
+	to_return += body + "\n";
+	return to_return;
 }
 
 
 HTTP_response::HTTP_response() {
 	version = HTTP_VERSION;
-	code = "";
-	header = "";
-	body = "";
+	code = " ";
+	body = " ";
 }
 HTTP_response::~HTTP_response(){}
 
 void HTTP_response::parse_raw_response (char* raw) {
-	const char* newline_delimiter = "\n";
-	const char* space_delimiter = " ";
-	version = strtok(raw, space_delimiter);
-	code = strtok(nullptr, newline_delimiter);
-	header = strtok(nullptr, newline_delimiter);
-	body = strtok(nullptr, newline_delimiter);	
+	printf("%s\n",raw);
+	std::cout<<"1\n";
+	const char* delimiter = "\n";
+	char* token;
+	token = strtok(raw, delimiter);
+	version = token;
+	std::cout<<"2\n";
+	token = strtok(nullptr, delimiter);
+	code = token;
+	std::cout<<"3\n";
+	token = strtok(nullptr, delimiter);
+	std::cout<<"4\n";
+	while ((token[0] != ' ') && (token[0] != '\0')) {
+		std::cout<<"5\n";
+		std::string s(token);
+		header_lines.push_back(s);
+		token = strtok(nullptr, delimiter);
+	}
+	std::cout<<"6\n";
+	token = strtok(nullptr, delimiter);
+	body = token;
+	std::cout<<"7\n";
 }
 
-const char* HTTP_response::to_cstring() {
-	return (version + " " + code + "\n"
-		+ header + "\n"
-		+ body + "\n").c_str();
+std::string HTTP_response::to_string() {
+	std::string to_return = "";
+	to_return += version + "\n";
+	to_return += code + "\n";
+	for (auto h : header_lines) {
+		to_return += h + "\n";
+	}
+	to_return += " \n";
+	to_return += body + "\n";
+	return to_return;
 }
 
 
@@ -83,6 +128,7 @@ void JSON::parse_string(std::string s) {
 			kv_map_[k] = static_cast<std::string>(token);
 			k = "";
 		}
+		token = strtok (nullptr, delimiters);
 	}
 }
 
@@ -104,7 +150,7 @@ std::string JSON::to_string(){
 	return to_return;
 }
 
-void JSON::add(std::string key, void* val, unsigned size) {
+void JSON::add(const std::string key, const void* val, const unsigned size) {
 	kv_map_[key] = val_to_string(val, size);
 }
 

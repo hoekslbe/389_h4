@@ -7,22 +7,32 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
+#include <unistd.h>
+
 #include <string.h>
 #include "cache.hh"
+
+#include <iostream>
+
 // header file for HTTP conversion utilities written by Robert and documented by Betsy
 #include "HTTP_utilities.hh"
 
+const int DEFAULT_MAXMEM = 1024;
+
+// Club penguin is tcp 6113 so we're in good company using this portnum as default if 
+ 	// no portnum is given in the command args
+const int DEFAULT_PORTNUM = 6114;
 // A global variable for the state of the server, whether it should be on or not
 int running = true;
 
 // This helper function handles the request options following a 'GET' verb
 // and returns the proper HTTP response to be packaged and sent to the client
- HTTP_response serv_GET(Cache::Cache& cache, HTTP_request& request_det) {
+ HTTP_response serv_GET(Cache& cache, HTTP_request& request_det) {
  	// Create empty objects based on HTTP_utilities for an HTTP_response and a JSON string 
  	HTTP_response response;
  	JSON results;
  	// handle GET for memsize
- 	if (request_det.uri == "/memsize") {
+ 	if (request_det.URI == "/memsize") {
  		// Find out how much space is used in cache
  		Cache::index_type memsize = cache.space_used();
  		// Make the memsize into response form and set response to it
@@ -30,46 +40,96 @@ int running = true;
  		// Call the add method in the JSON struct
  		results.add("memused", (void *) memsize_ptr, sizeof(Cache::index_type));
  		// Cast the JSON back to a string with the JSON tostring method
- 		std::string result_string = results.tostring();
+ 		std::string result_string = results.to_string();
  		// Set the body of the HTTP response to the string form of the JSON 
  		response.code = "200";
  		response.body = result_string; 
- 		return response;
- 	}
+ 	} else {
  	// Handle GET for a key
- 	if (request_det.uri == "/key/k") {
+ 	if (request_det.URI.substr(0, 5) == "/key/") {
+		Cache::key_type key = request_det.URI.substr(5, std::string::npos);
  		// Create a variable to be adjusted by cache get to reflect requested value size
- 		Cache::val_size gotten_size;
+ 		Cache::index_type gotten_size;
  		// Call 
- 		Cache::val_type key_gotten = cache.get("key", &gotten_size);
+		std::cout << "key is : " << key << "\n";
+ 		Cache::val_type val_gotten = cache.get(key, gotten_size);
+		if (val_gotten != nullptr) {
+			results.add(key, val_gotten, gotten_size);
+			response.body = results.to_string();
+			response.code = "200";
+		} else {
+			response.code = "404";
+			response.body = "Item not present in cache";
+		}
  		// set response to right form of key and value gotten 
  		//results.add()
- 		return response;
  	}
  	else {
  		// Assign error message for the result of an invalid URI
- 		response.code = "502 bad gateway";
- 	}
+ 		response.code = "502";
+		response.body = "bad gateway";
+ 	}}
+	return response;
+
  }
 // helper function handling PUT verb requests
- HTTP_response serv_PUT(Cache::Cache& cache, HTTP_request& request_det) {
+ HTTP_response serv_PUT(Cache &cache, HTTP_request &request_det) {
+	HTTP_response response;
 
- 	//create or replace a k,v pair in the cache
- 	Cache::key_type key;
- 	Cache::val_type	val;
- 	Cache::index_type set_size;
- 	cache.set(key, val, set_size)
+	if (request_det.URI.substr(0, 5) == "/key/") {
+	
+	 	//create or replace a k,v pair in the cache
+		unsigned sep = request_det.URI.find('/', 5);
+		Cache::key_type key = request_det.URI.substr(5, sep-5);
+		std::cout << "key is : " << key << "\n";
+		std::string val_string = request_det.URI.substr(sep+1, std::string::npos);
+ 		Cache::index_type set_size;
+		void* val = string_to_val(val_string, set_size);
+ 		if (cache.set(key, val, set_size) < 0) {
+			response.code = "500";
+			response.body = "Failed to set element";
+		} else {
+			response.code = "200";
+			response.body = "Element successfully set";
+		}
+		operator delete(val, set_size); // string_to_val allocates memory, so we have to delete here
+	} else {
+		response.code = "400";
+		response.body = "Bad PUT request";
+	}
+	return response;
  }
 
 // helper function handling DELETE verb requests 
- HTTP_response serv_DEL(Cache::Cache& cache, HTTP_request& request_det) {
-
+ HTTP_response serv_DEL(Cache &cache, HTTP_request &request_det) {
+	HTTP_response response;
+	if (request_det.URI.substr(0, 5) == "/key/") {
+		Cache::key_type key = request_det.URI.substr(6, std::string::npos);
+		std::cout << "key is : " << key << "\n";
+		if (cache.del(key) == 0) {
+			response.code = "200";
+			response.body = "Element successfully deleted";
+		} else {
+			response.code = "500";
+			response.body = "Failed to delete";
+		}
+	} else {
+		response.code = "400";
+		response.body = "Bad DELETE request";
+	}
+	return response;
  }
  // handle HEAD request, HEAD/key/k, returns just a header in 
  // HTTP_response form regardless of key. Return at least http
  // version, Date, Accept, and Content-Type 
  HTTP_response serv_HEAD(HTTP_request& request_det) {
- 	// return a header 
+	
+ 	HTTP_response response;
+	response.code = "200";
+	if (request_det.verb == "Watermelon") { // Just trying to avoid an 'ignoring inputs' compiler error
+		response.body = "Jump for Joy!";
+	}
+	return response; // not implemented to standards
  }
 
  // takes a reference to the file descriptor for the server socket
@@ -89,10 +149,9 @@ int running = true;
  // The server 
  int main(int argc, char *argv[]) {
  	int ind = 1;
- 	int maxmem = 1024;
- 	// Club penguin is tcp 6113 so we're in good company using this portnum as default if 
- 	// no portnum is given in the command args
- 	int portnum = 6114;
+ 	int maxmem = DEFAULT_MAXMEM;
+ 	
+ 	int portnum = DEFAULT_PORTNUM;
 
  	// Parse command line arguments for maxmem and portnum inputs
  	while(ind < argc) {
@@ -113,7 +172,7 @@ int running = true;
  	// Create a cache using the constructor from cache.hh
  	Cache cache(maxmem);
  	// Create a buffer to receive inputs from the client
- 	char buffer[1024];
+ 	char buffer[MAX_MESSAGE_SIZE];
  	// Create variables for sockets and a structure for addresses 
  	int server_socket_fd, new_socket_fd;
 	struct sockaddr_in serv_addr, cli_addr;
@@ -128,7 +187,7 @@ int running = true;
 	}
 
 	// Initialize socket structure
-	bzero((char*) &serv_addr, sizeof(serv_addr));
+	memset(&serv_addr, '0', sizeof(serv_addr));
 
 	serv_addr.sin_family = AF_INET;
 	serv_addr.sin_addr.s_addr = INADDR_ANY;
@@ -150,12 +209,17 @@ int running = true;
 		perror("Failure accepting connection");
 		exit(1);
 	}
+	//
+	const char* hello = "henlo";
+	send(new_socket_fd, hello, strlen(hello), 0);
+	//
+
 	// This is an infinite loop for receiving input from the client
 	while (running == true) {
-		bzero(buffer, 1024);
+		memset(buffer, '\0', MAX_MESSAGE_SIZE); // // // zeroing buffer?  Maybe we should memset buffer to '\0' instead?  
 
 		// read the commands from the buffer of client desires using rcv
-		int msg = rcv(new_socket_fd, buffer, 1023, 0);
+		int msg = recv(new_socket_fd, buffer, MAX_MESSAGE_SIZE, 0);
 		//Cache::index_type val_size = 0;
 		if (msg < 0) {
 			perror("Failure reading from socket");
@@ -171,7 +235,7 @@ int running = true;
 
 			// call the GET helper if GET requested, two possible types of GET handled with helper
 			if (client_request.verb == "GET") {
-				serv_response = serv_get(cache, client_request);
+				serv_response = serv_GET(cache, client_request);
 			}
 			// call the PUT helper if PUT requested
 			if (client_request.verb == "PUT") {
@@ -189,14 +253,14 @@ int running = true;
 			if (client_request.verb == "POST") {
 				serv_POST(server_socket_fd);
 			}
+		// Use the HTTP_utilities to_cstring() method to convert the proper HTTP response into a 
+		// string passable to the socket communicating with the client. 
+		const char* string_response = (serv_response.to_string()).c_str();
+		// Send the response in the proper c string format to the client
+		send(new_socket_fd, string_response, serv_response.to_string().length(), 0);	
+		// At this point, the loop begins again as the socket continues listening for 
+		// requests to fulfill until POST is called to shut down the server.
 		}
-	// Use the HTTP_utilities to_cstring() method to convert the proper HTTP response into a 
-	// string passable to the socket communicating with the client. 
-	char* string_response serv_response.to_cstring();
-	// Send the response in the proper c string format to the client
-	send(new_socket_fd, string_response, strlen(string_response), 0);	
-	// At this point, the loop begins again as the socket continues listening for 
-	// requests to fulfill until POST is called to shut down the server.
 	}
 
 }

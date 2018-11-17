@@ -1,10 +1,10 @@
 #include <cstring>
 #include <string>
 #include <unordered_map>
-#include <utility>
+#include <vector>
 
 //Need to change this to our actual HTTP version (whatever it is).  
-const std::string HTTP_VERSION = "HTTP/v1.1";
+const std::string HTTP_VERSION = "HTTP v1.1";
 const unsigned MAX_MESSAGE_SIZE = 1024;
 
 
@@ -23,12 +23,12 @@ struct HTTP_request {
 	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
 	void parse_raw_request (char* raw);
 
-	const char* to_cstring();
+	std::string to_string();
 
 	std::string verb;
 	std::string URI;
 	std::string version;
-	std::string header;
+	std::vector<std::string> header_lines;
 	std::string body;
 };
 
@@ -39,11 +39,11 @@ struct HTTP_response {
 	//Takes in raw, a c-style string, and uses the data in it to fill out the various fields of the HTTP_request
 	void parse_raw_response(char* raw);
 
-	const char* to_cstring();
+	std::string to_string();
 
 	std::string version;
 	std::string code;
-	std::string header;
+	std::vector<std::string> header_lines;
 	std::string body;
 };
 
@@ -52,7 +52,7 @@ struct JSON {
 	~JSON ();
 	void parse_string(std::string);
 	std::string to_string();
-	void add (std::string key, void* val, unsigned size);
+	void add (const std::string key, const void* val, const unsigned size);
 	std::unordered_map<std::string, std::string>::iterator find(std::string key);
 	std::unordered_map<std::string, std::string> kv_map_;
 };
