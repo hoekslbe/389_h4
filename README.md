@@ -20,9 +20,21 @@ POST /shutdown: Upon receiving this message, the server stops accepting requests
 (c) sustained throughput of the system (system capacity defined as the maximum offered load (in requests per second) at which the mean response time of the server remains under 1 millisecond) // sorry this is worded weirdly
 (d) accuracy/correctness of sets, gets, deletes
 
+(Betsy, this is me, Robert, adding some stuff):
+    speed of actions: we can measure latency & bandwidth (pretty much sustained throughput)
+    
+
 4. Parameters potentially affecting performance:
 (a) overloading of either server or client CPU
 (b)
+
+(Again, adding stuff):
+    Power of the machine the server/client is running on
+    other processes on the machine (we'd probably want as few running as possible)
+    load on the network (not sure how we'd measure this)
+        quality of the connection - running on same computer vs ethernet vs wireless
+    since we're running on laptops, maybe whether they were plugged in would matter?
+    
 
 5. Factors of Study:
 - client "SET" inputs, small and large
