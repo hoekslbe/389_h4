@@ -81,7 +81,10 @@ struct Cache::Impl {
 		const char* request_string = (request.to_string()).c_str();
 		send(sock, request_string, request.to_string().length(), 0);
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);
-		recv(sock, buffer, MAX_MESSAGE_SIZE, 0);
+		if ((recv(sock, buffer, MAX_MESSAGE_SIZE, 0) < 0) || (strlen(buffer) == 0)) {
+			valsize = 0;
+			return nullptr;
+		}
 		HTTP_response response;
 		response.parse_raw_response(buffer);
 		if (response.code == "200") {
@@ -118,7 +121,9 @@ struct Cache::Impl {
 		std::cout << "5\n";
 		memset(buffer, 0, MAX_MESSAGE_SIZE);
 		std::cout << "6\n";
-		recv(sock, buffer, MAX_MESSAGE_SIZE, 0);
+		if ((recv(sock, buffer, MAX_MESSAGE_SIZE, 0) < 0) || (strlen(buffer) == 0)) {
+			return -2;
+		}
 		std::cout << "7\n";
 		HTTP_response response;
 		std::cout << "8\n";
@@ -140,10 +145,13 @@ struct Cache::Impl {
 		const char* request_string = a.c_str();
 		std::cout<<"I'm the client, I'm deleting, and my request is: " << request_string<<"\n";
 		std::cout<<"length of the message I'm sending: " << request.to_string().length() << "\n";
-		std::cout<<"altlen: " << strlen(request_string) << "\n";
+		std::cout<<"altlen: " << strlen(request_string);
 		send(sock, request_string, request.to_string().length(), 0);
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);
-		recv(sock, buffer, MAX_MESSAGE_SIZE, 0);
+		//recv(sock, buffer, MAX_MESSAGE_SIZE, 0);
+		if ((recv(sock, buffer, MAX_MESSAGE_SIZE, 0) < 0) || (strlen(buffer) == 0)) {
+			return -2;
+		}
 		HTTP_response response;
 		response.parse_raw_response(buffer);
 		if (response.code == "200") {

@@ -99,8 +99,8 @@ TEST_CASE ("Testing GET"){
 
     SECTION ("Get doesn't have a hard-coded val_size to return") {
         cacheP->set(key, val2, size2);
-        auto val = cacheP->get(key, get_size);
-		if (val != nullptr) {cleanup.add(val, get_size);}
+        Cache::val_type out = cacheP->get(key, get_size);
+		if (out != nullptr) {cleanup.add(out, get_size);}
 		cacheP->del(key);
         REQUIRE(get_size == size2);
 		

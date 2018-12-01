@@ -242,24 +242,21 @@ int running = true;
 			std::cout<<"buffer len: " << strlen(buffer) << "\n";
 			client_request.parse_raw_request(buffer);
 
-			// call the GET helper if GET requested, two possible types of GET handled with helper
+			
 			if (client_request.verb == "GET") {
+				// call the GET helper if GET requested, two possible types of GET handled with helper
 				serv_response = serv_GET(cache, client_request);
-			}
-			// call the PUT helper if PUT requested
-			if (client_request.verb == "PUT") {
+			} else if (client_request.verb == "PUT") {
+				// call the PUT helper if PUT requested
 				serv_response = serv_PUT(cache, client_request);
-			}
-			// call the DEL helper if DELETE requested
-			if (client_request.verb == "DELETE") {
+			} else if (client_request.verb == "DELETE") {
+				// call the DEL helper if DELETE requested
 				serv_response = serv_DEL(cache, client_request);
-			}
-			// call the HEAD helper if the request is for HEAD to obtain a header 
-			if (client_request.verb == "HEAD") {
+			} else if (client_request.verb == "HEAD") {
+				// call the HEAD helper if the request is for HEAD to obtain a header 
 				serv_response = serv_HEAD(client_request);
-			}
-			// call the POST helper with server socket, shuts down the server 
-			if (client_request.verb == "POST") {
+			} else if (client_request.verb == "POST") {
+				// call the POST helper with server socket, shuts down the server 
 				serv_POST(server_socket_fd);
 			}
 		// Use the HTTP_utilities to_cstring() method to convert the proper HTTP response into a 
