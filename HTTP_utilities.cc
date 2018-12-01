@@ -83,6 +83,7 @@ void HTTP_response::parse_raw_response (char* raw) {
 	std::cout<<"1 response\n";
 	const char* delimiter = "\n";
 	char* token;
+	std::cout<<"1.5\n"; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 	token = strtok(raw, delimiter);
 	version = token;
 	std::cout<<"2\n";

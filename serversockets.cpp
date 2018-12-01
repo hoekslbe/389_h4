@@ -219,6 +219,7 @@ int running = true;
 
 	// This is an infinite loop for receiving input from the client
 	while (running == true) {
+		std::cout<<"\n\n\nNew Read Loop \n\n\n";
 		memset(buffer, '\0', MAX_MESSAGE_SIZE); // // // zeroing buffer?  Maybe we should memset buffer to '\0' instead?  
 
 		// read the commands from the buffer of client desires using rcv
@@ -232,6 +233,9 @@ int running = true;
 		else {
 			// create a new HTTP request and fill it by parsing the characters from the buffer
 			// with a function from HTTP_utilities.hh
+			if (strlen(buffer) == 0) {
+				continue;
+			}
 			HTTP_request client_request;
 			HTTP_response serv_response;
 			std::cout<<"buffer is: "<<buffer<<"\n"; // TAKE ME AWAY <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
