@@ -25,6 +25,19 @@ const int DEFAULT_PORTNUM = 6114;
 // A global variable for the state of the server, whether it should be on or not
 int running = true;
 
+//This helper function checks to see if a response is empty; it is called at the end of 
+//an operation helper function to ensure that function returns a non-empty response.
+//A return value of -1 indicates failure, 0 indicates success. 
+ bool check_resp(HTTP_response resp) {
+ 	if((resp.code == " ") && (resp.body == " ")) {
+ 		std::cout<<"Empty response";
+ 		return FALSE;
+ 	}
+ 	else {
+ 		return TRUE;
+ 	}
+ };
+
 // This helper function handles the request options following a 'GET' verb
 // and returns the proper HTTP response to be packaged and sent to the client
  HTTP_response serv_GET(Cache& cache, HTTP_request& request_det) {
@@ -50,9 +63,10 @@ int running = true;
 		Cache::key_type key = request_det.URI.substr(5, std::string::npos);
  		// Create a variable to be adjusted by cache get to reflect requested value size
  		Cache::index_type gotten_size;
- 		// Call 
 		std::cout << "key is : " << key << "\n";
+		// Attempt to Get the key 
  		Cache::val_type val_gotten = cache.get(key, gotten_size);
+ 		// If the get is successful 
 		if (val_gotten != nullptr) {
 			results.add(key, val_gotten, gotten_size);
 			response.body = results.to_string();
@@ -61,16 +75,13 @@ int running = true;
 			response.code = "404";
 			response.body = "Item not present in cache";
 		}
- 		// set response to right form of key and value gotten 
- 		//results.add()
  	}
  	else {
  		// Assign error message for the result of an invalid URI
  		response.code = "502";
 		response.body = "bad gateway";
  	}}
-	return response;
-
+	
  }
 // helper function handling PUT verb requests
  HTTP_response serv_PUT(Cache &cache, HTTP_request &request_det) {
@@ -212,15 +223,14 @@ int running = true;
 		perror("Failure accepting connection");
 		exit(1);
 	}
-	//
+	// PLEASE REMOVE THIS SOMETIME IN THE FUTURE 
 	const char* hello = "henlo";
 	send(new_socket_fd, hello, strlen(hello), 0);
-	//
 
-	// This is an infinite loop for receiving input from the client
+	// Run an infinite loop to listen for messages from a client
 	while (running == true) {
 		std::cout<<"\n\n\nNew Read Loop \n\n\n";
-		memset(buffer, '\0', MAX_MESSAGE_SIZE); // // // zeroing buffer?  Maybe we should memset buffer to '\0' instead?  
+		memset(buffer, '\0', MAX_MESSAGE_SIZE);   
 
 		// read the commands from the buffer of client desires using rcv
 		int msg = recv(new_socket_fd, buffer, MAX_MESSAGE_SIZE, 0);
@@ -259,6 +269,11 @@ int running = true;
 				// call the POST helper with server socket, shuts down the server 
 				serv_POST(server_socket_fd);
 			}
+		bool valid_response = check_resp(serv_response);
+		if (valid_response == FALSE ) {
+			serv_response.body == "There's been an internal error (empty response)";
+			serv_response.code == "500";
+		}
 		// Use the HTTP_utilities to_cstring() method to convert the proper HTTP response into a 
 		// string passable to the socket communicating with the client. 
 		const char* string_response = (serv_response.to_string()).c_str();
