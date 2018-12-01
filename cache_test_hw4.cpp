@@ -5,7 +5,11 @@
 
 #include "cache.hh"
 
+#include "HTTP_utilities.hh"
+
 #include <iostream>
+
+#include <memory>
 
 // This object handles teardown for our tests.  In each test case, we create an instance, and pass it the pointers
 // which will need to be deleted after the test.  When the Cleaner goes out of scope, its destructor deletes all
@@ -26,6 +30,20 @@ struct Cleaner {
     std::vector<std::pair<Cache::val_type, Cache::index_type>> items_;
 };
 
+struct CacheHolder { // a struct to access the single cache we can create for these tests
+	static std::shared_ptr<Cache> cache_pointer; //input doesn't matter here
+	static bool initialized; //should be false; I can't seem to change it
+	static std::shared_ptr<Cache> getCachePointer() {
+		if (!initialized) {
+			cache_pointer = std::make_shared<Cache>(1);
+			initialized = true;
+		}
+		return cache_pointer;
+	}
+};
+
+std::shared_ptr<Cache> CacheHolder::cache_pointer = 0;
+bool CacheHolder::initialized = false;
 
 TEST_CASE ("Testing GET"){
     // A cleaner is always created to handle the pointers needed for a test
@@ -34,49 +52,63 @@ TEST_CASE ("Testing GET"){
     // Create keys and values that can be used to populate the cache
     // And create the cache itself before running tests
     Cache::key_type key = "cachekey";
-    Cache::val_type val = (void*) new int(3);
-    Cache::index_type size = sizeof(int);
+
+
+	std::string s1 = "message";
+    Cache::index_type size = 1;
+	Cache::val_type val = string_to_val(s1, size);
     cleanup.add(val, size);
 
-    Cache::val_type val2 = (void*) new double(4.0);
-    Cache::index_type size2 = sizeof(double);
+	std::string s2 = "longer_message";
+    Cache::index_type size2 = 1;
+    Cache::val_type val2 = string_to_val(s2, size2);
     cleanup.add(val2, size2);
 
     Cache::index_type get_size = 1;
 
-    Cache cache(size + size2 + 1);
+	std::shared_ptr<Cache> cacheP = CacheHolder::getCachePointer();
+
+    //Cache cache(size + size2 + 1);
     SECTION ("Getting an item present in the cache returns the item") {
 		std::cout<<"hi\n";
-        cache.set(key, val, size);
+        //cache.set(key, val, size);
+		cacheP->set(key, val, size);
 		std::cout<<"whi\n";
-        Cache::val_type out = cache.get(key, get_size);
+        Cache::val_type out = cacheP->get(key, get_size);
 		std::cout<<"bye\n";
 		std::cout<<out<<"\n";
 		if (out != nullptr) {cleanup.add(out, get_size);}
 		std::cout<<"wumba\n";
-        REQUIRE(*((int*) out) == *((int*) val));
+		cacheP->del(key);
+		std::cout<<"afterdel\n";
+        REQUIRE(val_to_string(out, get_size) == s1);
+		
     }
 
     SECTION ("Get sets valsize to the size of the returned object") {
 		std::cout<<"mumba\n";
-        cache.set(key, val, size);
+        cacheP->set(key, val, size);
 		std::cout<<"mumbo\n";
-        auto val = cache.get(key, get_size);
+        Cache::val_type out = cacheP->get(key, get_size);
 		std::cout<<"jumbo\n";
-		if (val != nullptr) {cleanup.add(val, get_size);}
+		if (out != nullptr) {cleanup.add(out, get_size);}
+		cacheP->del(key);
         REQUIRE(get_size == size);
+		
     }
 
     SECTION ("Get doesn't have a hard-coded val_size to return") {
-        cache.set(key, val2, size2);
-        auto val = cache.get(key, get_size);
+        cacheP->set(key, val2, size2);
+        auto val = cacheP->get(key, get_size);
 		if (val != nullptr) {cleanup.add(val, get_size);}
+		cacheP->del(key);
         REQUIRE(get_size == size2);
+		
     }
 
     SECTION ("Getting an item not in the cache returns nullptr") {
         // calls get without ever setting
-        Cache::val_type out = cache.get(key, get_size);
+        Cache::val_type out = cacheP->get(key, get_size);
 		if (out != nullptr) {cleanup.add(out, get_size);}
         REQUIRE(out == nullptr);
     }

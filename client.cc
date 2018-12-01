@@ -87,7 +87,14 @@ struct Cache::Impl {
 		if (response.code == "200") {
 			JSON result;
 			result.parse_string(response.body);
-			Cache::val_type val = string_to_val(result.find(key)->second, valsize);
+			std::cout<<result.to_string()<<'\n';
+			auto r = *(result.find(key));
+			std::cout<<r.first<<'\n';
+			std::cout<<r.second<<'\n';
+			std::cout<<string_to_val(r.second, valsize)<<std::endl;
+			std::cout<<*((int*) string_to_val(r.second, valsize))<<std::endl;
+			std::cout<<valsize<<std::endl;
+			Cache::val_type val = string_to_val((result.find(key))->second, valsize);
 			return val;
 		} else {
 			valsize = 0;
@@ -127,7 +134,13 @@ struct Cache::Impl {
 		HTTP_request request;
 		request.verb = "DELETE";
 		request.URI = "/key/" + key;
-		const char* request_string = (request.to_string()).c_str();
+		std::cout<<"requet URI is: " + request.URI + "\n";
+		std::cout<<request.to_string();
+		auto a = request.to_string();
+		const char* request_string = a.c_str();
+		std::cout<<"I'm the client, I'm deleting, and my request is: " << request_string<<"\n";
+		std::cout<<"length of the message I'm sending: " << request.to_string().length() << "\n";
+		std::cout<<"altlen: " << strlen(request_string) << "\n";
 		send(sock, request_string, request.to_string().length(), 0);
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);
 		recv(sock, buffer, MAX_MESSAGE_SIZE, 0);

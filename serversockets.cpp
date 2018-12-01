@@ -104,7 +104,7 @@ int running = true;
  HTTP_response serv_DEL(Cache &cache, HTTP_request &request_det) {
 	HTTP_response response;
 	if (request_det.URI.substr(0, 5) == "/key/") {
-		Cache::key_type key = request_det.URI.substr(6, std::string::npos);
+		Cache::key_type key = request_det.URI.substr(5, std::string::npos);
 		std::cout << "key is : " << key << "\n";
 		if (cache.del(key) == 0) {
 			response.code = "200";
@@ -231,6 +231,8 @@ int running = true;
 			// with a function from HTTP_utilities.hh
 			HTTP_request client_request;
 			HTTP_response serv_response;
+			std::cout<<"buffer is: "<<buffer<<"\n"; // TAKE ME AWAY <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+			std::cout<<"buffer len: " << strlen(buffer) << "\n";
 			client_request.parse_raw_request(buffer);
 
 			// call the GET helper if GET requested, two possible types of GET handled with helper

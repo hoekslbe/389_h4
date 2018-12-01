@@ -2,7 +2,7 @@
 #include <iostream>
 
 std::string val_to_string(const void* val, const unsigned size) {
-	char interim_conversion_string[1024];
+	char interim_conversion_string[MAX_MESSAGE_SIZE];
 	memset(interim_conversion_string, '\0', size + 1);
 	memcpy((void*) interim_conversion_string, val, size);
 	std::string converted_string(interim_conversion_string);
@@ -11,7 +11,9 @@ std::string val_to_string(const void* val, const unsigned size) {
 
 void* string_to_val (std::string s, unsigned &size) {
 	const char* interim_conversion_string = s.c_str();
-	size = s.length();
+	//size = s.length();
+	size = strlen(interim_conversion_string);
+	std::cout<<"length was: " << size << '\n';
 	void* val = operator new(size);
 	memcpy(val, (void*) interim_conversion_string, size);
 	return val;
@@ -29,7 +31,7 @@ HTTP_request::~HTTP_request() {}
 
 void HTTP_request::parse_raw_request (char* raw) {
 	printf("%s\n",raw);
-	std::cout<<"1\n";
+	std::cout<<"1 request\n";
 	const char* delimiter = "\n";
 	char* token;
 	std::cout<<"1.5\n";
@@ -78,7 +80,7 @@ HTTP_response::~HTTP_response(){}
 
 void HTTP_response::parse_raw_response (char* raw) {
 	printf("%s\n",raw);
-	std::cout<<"1\n";
+	std::cout<<"1 response\n";
 	const char* delimiter = "\n";
 	char* token;
 	token = strtok(raw, delimiter);
