@@ -2,41 +2,55 @@
 Homework 5 Benchmarking 
 
 1. Project Goals/System Definition:
+
 A client and a server make up the system. The server stores and operates on a cache object when information is requested by the client. Both processes can occur on a single machine or between designated client and server machines. To measure the performance of the system in the most isolation, we are evaluating the system by testing it on an individual machine acting as both client and server.  
 
 2. System Services:
 The server should be able to perform a number of operations on the cache object it manages if the client connected to it makes a request. The following requests are accepted as HTTP messages:
-GET /key/k: Returns a JSON tuple to client with { key: k, value: v } pair (where k is the resource in the request, and value is the appropriate value from the cache), or an error message if the key isn't in the cache.
-GET /memsize: Returns a JSON tuple to client with { memused: mem } with the value returned by the Cache's memused method.
-PUT /key/k/v: create or replace a k,v pair in the cache.
-DELETE /key/k: Deletes a key, value pair from the cache if the key is present, otherwise does nothing.
-HEAD /key/k: Returns a header to the client regardless of the resource (key) requested. 
-POST /shutdown: Upon receiving this message, the server stops accepting requests, finishes up any requests in-flight, cleans up the cache (frees resources) and exists cleanly.
 
+   - GET /key/k: Returns a JSON tuple to client with { key: k, value: v } pair (where k is the resource in the request, and value is the appropriate value from the cache), or an error message if the key isn't in the cache.
+
+   - GET /memsize: Returns a JSON tuple to client with { memused: mem } with the value returned by the Cache's memused method.
+
+   - PUT /key/k/v: create or replace a k,v pair in the cache.
+
+   - DELETE /key/k: Deletes a key, value pair from the cache if the key is present, otherwise does nothing.
+
+   - HEAD /key/k: Returns a header to the client regardless of the resource (key) requested. 
+
+   - POST /shutdown: Upon receiving this message, the server stops accepting requests, finishes up any requests in-flight, cleans up the cache (frees resources) and exists cleanly.
+
+System services failure handling:
 /// should we put info about possible failures in the system services category as well? the reading sort of implies this 
-3. Metrics:
-(a) Speed of GET retrieval from server to client
-(b) Speed of a single request generally? how much does it differ between set vs get? do we need to test all individually? what's relevant? 
-(c) sustained throughput of the system (system capacity defined as the maximum offered load (in requests per second) at which the mean response time of the server remains under 1 millisecond) // sorry this is worded weirdly
-(d) accuracy/correctness of sets, gets, deletes
 
-(Betsy, this is me, Robert, adding some stuff):
-    speed of actions: we can measure latency & bandwidth (pretty much sustained throughput)
-    
+3. Metrics:
+
+      (a) Latency of requests made by the client 
+
+      (b) Sustained throughput of the system, where system capacity is defined in terms of the maximum offered load (in requests per second) at which the mean response time of the server remains under 1 millisecond
+
+      (c) Accuracy/correctness of sets, gets, deletes performed on the cache
+
+      (d) System bandwidth  
+
+Throughput and bandwidth are closely related. Throughput is bounded by the maximum server response time we want requests to be served in, whereas bandwidth is represented by the maximum amount of data that can be passed through the server in bits per second. 
 
 4. Parameters potentially affecting performance:
-(a) overloading of either server or client CPU
-(b)
 
-(Again, adding stuff):
-    Power of the machine the server/client is running on
-    other processes on the machine (we'd probably want as few running as possible)
-    load on the network (not sure how we'd measure this)
-        quality of the connection - running on same computer vs ethernet vs wireless
-    since we're running on laptops, maybe whether they were plugged in would matter?
-    
+ (a) Overloading of either server or client CPU. Overloading occurs when the server or client CPU runs out of resources, most often processor or RAM resources, and this can occur for a couple of reasons: 
+
+   (1) Processes running on the machine other than the server-client program limiting available resources 
+
+   (2) High request load on the network overconsuming processor or RAM resources
+
+ (c) Quality of the network connection: whether server-client program is running on a single computer, wirelessly between two computers, or over ethernet connection
+
+ (d) Electrical power availability: If running on a laptop, is it plugged in? Computer working to preserve battery life can affect performance of system operations.
+
+ (e) Server design itself, if there are bugs or fundamental design flaws that cause overconsumption of resources in operations despite a seemingly low request load and stable network connection
 
 5. Factors of Study:
+
 - client "SET" inputs, small and large
 - client requests, leveled in a range of frequencies 
 //- what other parameters? more challenging parameters to measure/adjust?
@@ -53,7 +67,7 @@ A script of queries from client to server.
 
 10. Presentation of Data (meaningful, clear graphs)
 
-We have tried to implement a RESTful web service whereby our client can communicate with our server to request and manipulate information utilizing the cache we created in previous homeworks. We took a tour of libraries for simplifying the manipulation required to convert between c style string socket stream data and HTTP styled responses and requests, but in the end, Pistache was not well documented, so although it was beautiful, we decided not to use it. Boost.beast was well documented but the documentation seemed complex to sort through, so we opted to work with sockets from the ground up. In the end, Robert developed an HTTP_utilities API to simplify JSON, HTTP, and cstring conversion, which we then realized was the point of Pistache, we just couldn't tell exactly how it was working because of the lack of documentation, which made us uncomfortable to rely on it. It is pretty cool to have done our own API, because I think it helped make the server implementation more elegantly organized. 
+
 
 Server: The server establishes a socket after parsing the command line requests, and then listens for connections. When data is received through rcv() as a cstring, it is converted to an HTTP request using the HTTP_utilities functionality so that the verb can be parsed, and the request is then handed to a helper function which handles the operations expected from that request verb. 
     HTTP requests handled:
