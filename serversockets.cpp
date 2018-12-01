@@ -117,6 +117,9 @@ int running = true;
 		response.code = "400";
 		response.body = "Bad DELETE request";
 	}
+
+	std::cout<<"getting out of serv_Del\n";
+
 	return response;
  }
  // handle HEAD request, HEAD/key/k, returns just a header in 
