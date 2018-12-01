@@ -83,7 +83,7 @@ void HTTP_response::parse_raw_response (char* raw) {
 	std::cout<<"1 response\n";
 	const char* delimiter = "\n";
 	char* token;
-	std::cout<<"1.5\n"; //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+	std::cout<<"1.5\n"; 
 	token = strtok(raw, delimiter);
 	version = token;
 	std::cout<<"2\n";
@@ -157,3 +157,6 @@ void JSON::add(const std::string key, const void* val, const unsigned size) {
 	kv_map_[key] = val_to_string(val, size);
 }
 
+void JSON::add(const std::string key, const std::string val) {
+	kv_map_[key] = val;
+}

@@ -31,12 +31,12 @@ int running = true;
  bool check_resp(HTTP_response resp) {
  	if((resp.code == " ") && (resp.body == " ")) {
  		std::cout<<"Empty response";
- 		return FALSE;
+ 		return false;
  	}
  	else {
- 		return TRUE;
+ 		return true;
  	}
- };
+ }
 
 // This helper function handles the request options following a 'GET' verb
 // and returns the proper HTTP response to be packaged and sent to the client
@@ -49,9 +49,9 @@ int running = true;
  		// Find out how much space is used in cache
  		Cache::index_type memsize = cache.space_used();
  		// Make the memsize into response form and set response to it
- 		Cache::index_type * memsize_ptr = &memsize;
+ 		//Cache::index_type * memsize_ptr = &memsize;
  		// Call the add method in the JSON struct
- 		results.add("memused", (void *) memsize_ptr, sizeof(Cache::index_type));
+ 		results.add("memused", std::to_string(memsize));
  		// Cast the JSON back to a string with the JSON tostring method
  		std::string result_string = results.to_string();
  		// Set the body of the HTTP response to the string form of the JSON 
@@ -81,7 +81,7 @@ int running = true;
  		response.code = "502";
 		response.body = "bad gateway";
  	}}
-	
+	return response;
  }
 // helper function handling PUT verb requests
  HTTP_response serv_PUT(Cache &cache, HTTP_request &request_det) {
@@ -270,7 +270,7 @@ int running = true;
 				serv_POST(server_socket_fd);
 			}
 		bool valid_response = check_resp(serv_response);
-		if (valid_response == FALSE ) {
+		if (valid_response == false ) {
 			serv_response.body == "There's been an internal error (empty response)";
 			serv_response.code == "500";
 		}

@@ -53,6 +53,7 @@ struct JSON {
 	void parse_string(std::string);
 	std::string to_string();
 	void add (const std::string key, const void* val, const unsigned size);
+	void add (const std::string key, const std::string val);
 	std::unordered_map<std::string, std::string>::iterator find(std::string key);
 	std::unordered_map<std::string, std::string> kv_map_;
 };

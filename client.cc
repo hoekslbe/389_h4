@@ -173,10 +173,14 @@ struct Cache::Impl {
 		response.parse_raw_response(buffer);
 		JSON result;
 		result.parse_string(response.body);
+		/*
 		unsigned size;
 		void* val = string_to_val(result.find("memused")->second, size);
 		Cache::index_type to_return = *((Cache::index_type*) val);
 		operator delete(val, size);
+		*/
+		std::string size_string = result.find("memused")->second;
+		unsigned to_return = (unsigned) stoi(size_string);
 		return to_return;
 	}
 

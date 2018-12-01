@@ -110,6 +110,7 @@ TEST_CASE ("Testing GET"){
         // calls get without ever setting
         Cache::val_type out = cacheP->get(key, get_size);
 		if (out != nullptr) {cleanup.add(out, get_size);}
+		std::cout<<"Howabunga nowabunga brown cowabunga\n";
         REQUIRE(out == nullptr);
     }
 
@@ -119,37 +120,42 @@ TEST_CASE ("Testing SPACE_USED") {
     Cleaner cleanup;
 
     Cache::key_type key = "cachekey";
-    Cache::val_type val = (void*) new int(3);
-    Cache::val_type val1 = (void*) new int(2);
-    Cache::index_type size = sizeof(int);
-    cleanup.add(val, size);
-    cleanup.add(val1, size);
 
-    Cache cache(size + 1);
+	std::string s1 = "message1";
+	Cache::index_type size = 1;
+    Cache::val_type val = string_to_val(s1, size);
+	std::string s2 = "message2";
+    Cache::val_type val2 = string_to_val(s2, size);
+    cleanup.add(val, size);
+    cleanup.add(val2, size);
+
+    std::shared_ptr<Cache> cacheP = CacheHolder::getCachePointer();
 
     SECTION ("Space used by an empty cache is 0") {
-        REQUIRE(cache.space_used() == 0);
+        REQUIRE(cacheP->space_used() == 0);
     }
 
     SECTION ("Adding an item increases space used") {
-        cache.set(key, val, size);
-        REQUIRE(cache.space_used() == size);
+        cacheP->set(key, val, size);
+		Cache::index_type spused = cacheP->space_used();
+		cacheP->del(key);
+        REQUIRE(spused == size);
     }
 
     SECTION ("Adding and then removing an item does not change space used") {
-        cache.set(key, val, size);
-        cache.del(key);
-        REQUIRE(cache.space_used() == 0);
+        cacheP->set(key, val, size);
+        cacheP->del(key);
+        REQUIRE(cacheP->space_used() == 0);
     }
 
     SECTION ("Overwriting a new value to the same key does not change space used") {
-        cache.set(key, val, size);
-        cache.set(key, val1, size);
-        REQUIRE(cache.space_used() == 4);
+        cacheP->set(key, val, size);
+        cacheP->set(key, val2, size);
+        REQUIRE(cacheP->space_used() == size);
     }
 
 }
-
+/*
 // Test the functionality of the set function on a cache in a variety
 // of cases 
 TEST_CASE ("Testing SET functionality") {
@@ -280,3 +286,4 @@ TEST_CASE ("Testing DEL") {
     }
 
 }
+*/
