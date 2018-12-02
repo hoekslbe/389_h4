@@ -31,11 +31,11 @@ struct Cleaner {
 };
 
 struct CacheHolder { // a struct to access the single cache we can create for these tests
-	static std::shared_ptr<Cache> cache_pointer; //input doesn't matter here
+	static std::shared_ptr<Cache> cache_pointer; 
 	static bool initialized; //should be false; I can't seem to change it
 	static std::shared_ptr<Cache> getCachePointer() {
 		if (!initialized) {
-			cache_pointer = std::make_shared<Cache>(1);
+			cache_pointer = std::make_shared<Cache>(1); //input doesn't matter here
 			initialized = true;
 		}
 		return cache_pointer;
@@ -151,7 +151,9 @@ TEST_CASE ("Testing SPACE_USED") {
     SECTION ("Overwriting a new value to the same key does not change space used") {
         cacheP->set(key, val, size);
         cacheP->set(key, val2, size);
-        REQUIRE(cacheP->space_used() == size);
+		Cache::index_type spused = cacheP->space_used();
+		cacheP->del(key);
+        REQUIRE(spused == size);
     }
 
 }
@@ -275,7 +277,7 @@ TEST_CASE ("Testing DEL") {
     Cleaner cleanup;
 
     Cache::key_type key = "cachekey";
-	std::string s = "some_message";
+	std::string s = "someMessage";
 	Cache::index_type size = 1;
     Cache::val_type val = string_to_val(s, size);
     cleanup.add(val, size);
@@ -288,6 +290,7 @@ TEST_CASE ("Testing DEL") {
         cacheP->set(key, val, size);
         cacheP->del(key);
         Cache::val_type out = cacheP->get(key, get_size);
+		if (out != nullptr) {cleanup.add(out, get_size);}
         REQUIRE(out == nullptr);
     }
 
@@ -295,6 +298,7 @@ TEST_CASE ("Testing DEL") {
         cacheP->set(key, val, size);
         cacheP->del("nottherightkey");
         Cache::val_type out = cacheP->get(key, get_size);
+		if (out != nullptr) {cleanup.add(out, get_size);}
 		cacheP->del(key);
         REQUIRE(val_to_string(out, get_size) == s);
     }
