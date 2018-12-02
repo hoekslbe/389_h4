@@ -59,7 +59,7 @@ TEST_CASE ("Testing GET"){
 	Cache::val_type val = string_to_val(s1, size);
     cleanup.add(val, size);
 
-	std::string s2 = "longer_message";
+	std::string s2 = "longerMessage";
     Cache::index_type size2 = 1;
     Cache::val_type val2 = string_to_val(s2, size2);
     cleanup.add(val2, size2);
@@ -70,27 +70,27 @@ TEST_CASE ("Testing GET"){
 
     //Cache cache(size + size2 + 1);
     SECTION ("Getting an item present in the cache returns the item") {
-		std::cout<<"hi\n";
+		//std::cout<<"hi\n";
         //cache.set(key, val, size);
 		cacheP->set(key, val, size);
-		std::cout<<"whi\n";
+		//std::cout<<"whi\n";
         Cache::val_type out = cacheP->get(key, get_size);
-		std::cout<<"bye\n";
-		std::cout<<out<<"\n";
+		//std::cout<<"bye\n";
+		//std::cout<<out<<"\n";
 		if (out != nullptr) {cleanup.add(out, get_size);}
-		std::cout<<"wumba\n";
+		//std::cout<<"wumba\n";
 		cacheP->del(key);
-		std::cout<<"afterdel\n";
+		//std::cout<<"afterdel\n";
         REQUIRE(val_to_string(out, get_size) == s1);
 		
     }
 
     SECTION ("Get sets valsize to the size of the returned object") {
-		std::cout<<"mumba\n";
+		//std::cout<<"mumba\n";
         cacheP->set(key, val, size);
-		std::cout<<"mumbo\n";
+		//std::cout<<"mumbo\n";
         Cache::val_type out = cacheP->get(key, get_size);
-		std::cout<<"jumbo\n";
+		//std::cout<<"jumbo\n";
 		if (out != nullptr) {cleanup.add(out, get_size);}
 		cacheP->del(key);
         REQUIRE(get_size == size);
@@ -110,7 +110,7 @@ TEST_CASE ("Testing GET"){
         // calls get without ever setting
         Cache::val_type out = cacheP->get(key, get_size);
 		if (out != nullptr) {cleanup.add(out, get_size);}
-		std::cout<<"Howabunga nowabunga brown cowabunga\n";
+		//std::cout<<"Howabunga nowabunga brown cowabunga\n";
         REQUIRE(out == nullptr);
     }
 
@@ -169,23 +169,23 @@ TEST_CASE ("Testing SET functionality") {
 
 	std::shared_ptr<Cache> cacheP = CacheHolder::getCachePointer();
 
-    Cache::key_type key1 = "first_key";
-	std::string s1 = "first_message";
+    Cache::key_type key1 = "firstKey";
+	std::string s1 = "firstMessage";
 	Cache::index_type size1 = 1;
     Cache::val_type val1 = string_to_val(s1, size1);
 
-    Cache::key_type key2 = "second_key";
-	std::string s2 = "second_message";
+    Cache::key_type key2 = "secondKey";
+	std::string s2 = "secondMessage";
 	Cache::index_type size2 = 1;
     Cache::val_type val2 = string_to_val(s2, size2);
 
-    Cache::key_type key3 = "third_key";
-    std::string s3 = "third_message";
+    Cache::key_type key3 = "thirdKey";
+    std::string s3 = "thirdMessage";
 	Cache::index_type size3 = 1;
     Cache::val_type val3 = string_to_val(s3, size3);
 
-    Cache::key_type key4 = "fourth_key";
-    std::string s4 = "fourth_message";
+    Cache::key_type key4 = "fourthKey";
+    std::string s4 = "fourthMessage";
 	Cache::index_type size4 = 1;
     Cache::val_type val4 = string_to_val(s4, size4);
 

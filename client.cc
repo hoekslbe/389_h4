@@ -82,6 +82,7 @@ struct Cache::Impl {
 		send(sock, request_string, request.to_string().length(), 0);
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);
 		if ((recv(sock, buffer, MAX_MESSAGE_SIZE, 0) < 0) || (strlen(buffer) == 0)) {
+			std::cout<<"'GET' failed - empty buffer - trying to get '" << key << "'\n";
 			valsize = 0;
 			return nullptr;
 		}
@@ -90,45 +91,46 @@ struct Cache::Impl {
 		if (response.code == "200") {
 			JSON result;
 			result.parse_string(response.body);
-			std::cout<<result.to_string()<<'\n';
+			//std::cout<<result.to_string()<<'\n';
 			auto r = *(result.find(key));
-			std::cout<<r.first<<'\n';
-			std::cout<<r.second<<'\n';
-			std::cout<<string_to_val(r.second, valsize)<<std::endl;
-			std::cout<<*((int*) string_to_val(r.second, valsize))<<std::endl;
-			std::cout<<valsize<<std::endl;
+			//std::cout<<r.first<<'\n';
+			//std::cout<<r.second<<'\n';
+			//std::cout<<string_to_val(r.second, valsize)<<std::endl;
+			//std::cout<<*((int*) string_to_val(r.second, valsize))<<std::endl;
+			//std::cout<<valsize<<std::endl;
 			Cache::val_type val = string_to_val((result.find(key))->second, valsize);
 			return val;
 		} else {
+			//std::cout<<"'GET' failed - non-200 response code - trying to get '" << key << "'\n";
 			valsize = 0;
 			return nullptr;
 		}
 	}
 	int set(Cache::key_type key, Cache::val_type val, Cache::index_type size){
-		std::cout<<"1\n";
+		//std::cout<<"1\n";
 		HTTP_request request;
 		request.verb = "PUT";
-		std::cout<<"2\n";
+		//std::cout<<"2\n";
 		request.URI = "/key/" + key + "/" + val_to_string(val, size);
-		std::cout << "3\n";
-		std::cout<<request.to_string();
-		std::cout << "c++ len" << request.to_string().length()<<"\n";
-		std::cout<<request.to_string().c_str();
+		//std::cout << "3\n";
+		//std::cout<<request.to_string();
+		//std::cout << "c++ len" << request.to_string().length()<<"\n";
+		//std::cout<<request.to_string().c_str();
 		const char* request_string = (request.to_string()).c_str();
-		std::cout<< "c len" << strlen(request_string)<<"\n";
-		std::cout << "4\n";
+		//std::cout<< "c len" << strlen(request_string)<<"\n";
+		//std::cout << "4\n";
 		send(sock, request_string, request.to_string().length(), 0);
-		std::cout << "5\n";
+		//std::cout << "5\n";
 		memset(buffer, 0, MAX_MESSAGE_SIZE);
-		std::cout << "6\n";
+		//std::cout << "6\n";
 		if ((recv(sock, buffer, MAX_MESSAGE_SIZE, 0) < 0) || (strlen(buffer) == 0)) {
 			return -2;
 		}
-		std::cout << "7\n";
+		//std::cout << "7\n";
 		HTTP_response response;
-		std::cout << "8\n";
+		//std::cout << "8\n";
 		response.parse_raw_response(buffer);
-		std::cout << "9\n";
+		//std::cout << "9\n";
 		if (response.code == "200") {
 			return 0;
 		} else {
@@ -139,13 +141,13 @@ struct Cache::Impl {
 		HTTP_request request;
 		request.verb = "DELETE";
 		request.URI = "/key/" + key;
-		std::cout<<"requet URI is: " + request.URI + "\n";
-		std::cout<<request.to_string();
+		//std::cout<<"requet URI is: " + request.URI + "\n";
+		//std::cout<<request.to_string();
 		auto a = request.to_string();
 		const char* request_string = a.c_str();
-		std::cout<<"I'm the client, I'm deleting, and my request is: " << request_string<<"\n";
-		std::cout<<"length of the message I'm sending: " << request.to_string().length() << "\n";
-		std::cout<<"altlen: " << strlen(request_string);
+		//std::cout<<"I'm the client, I'm deleting, and my request is: " << request_string<<"\n";
+		//std::cout<<"length of the message I'm sending: " << request.to_string().length() << "\n";
+		//std::cout<<"altlen: " << strlen(request_string);
 		send(sock, request_string, request.to_string().length(), 0);
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);
 		//recv(sock, buffer, MAX_MESSAGE_SIZE, 0);

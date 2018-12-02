@@ -63,7 +63,7 @@ int running = true;
 		Cache::key_type key = request_det.URI.substr(5, std::string::npos);
  		// Create a variable to be adjusted by cache get to reflect requested value size
  		Cache::index_type gotten_size;
-		std::cout << "key is : " << key << "\n";
+		//std::cout << "key is : " << key << "\n";
 		// Attempt to Get the key 
  		Cache::val_type val_gotten = cache.get(key, gotten_size);
  		// If the get is successful 
@@ -92,7 +92,7 @@ int running = true;
 	 	//create or replace a k,v pair in the cache
 		unsigned sep = request_det.URI.find('/', 5);
 		Cache::key_type key = request_det.URI.substr(5, sep-5);
-		std::cout << "key is : " << key << "\n";
+		//std::cout << "key is : " << key << "\n";
 		std::string val_string = request_det.URI.substr(sep+1, std::string::npos);
  		Cache::index_type set_size;
 		void* val = string_to_val(val_string, set_size);
@@ -116,7 +116,7 @@ int running = true;
 	HTTP_response response;
 	if (request_det.URI.substr(0, 5) == "/key/") {
 		Cache::key_type key = request_det.URI.substr(5, std::string::npos);
-		std::cout << "key is : " << key << "\n";
+		//std::cout << "key is : " << key << "\n";
 		if (cache.del(key) == 0) {
 			response.code = "200";
 			response.body = "Element successfully deleted";
@@ -129,7 +129,7 @@ int running = true;
 		response.body = "Bad DELETE request";
 	}
 
-	std::cout<<"getting out of serv_Del\n";
+	//std::cout<<"getting out of serv_Del\n";
 
 	return response;
  }
@@ -229,7 +229,7 @@ int running = true;
 
 	// Run an infinite loop to listen for messages from a client
 	while (running == true) {
-		std::cout<<"\n\n\nNew Read Loop \n\n\n";
+		//std::cout<<"\n\n\nNew Read Loop \n\n\n";
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);   
 
 		// read the commands from the buffer of client desires using rcv
@@ -248,8 +248,8 @@ int running = true;
 			}
 			HTTP_request client_request;
 			HTTP_response serv_response;
-			std::cout<<"buffer is: "<<buffer<<"\n"; // TAKE ME AWAY <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-			std::cout<<"buffer len: " << strlen(buffer) << "\n";
+			//std::cout<<"buffer is: "<<buffer<<"\n"; // TAKE ME AWAY <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+			//std::cout<<"buffer len: " << strlen(buffer) << "\n";
 			client_request.parse_raw_request(buffer);
 
 			

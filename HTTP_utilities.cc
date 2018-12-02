@@ -13,7 +13,7 @@ void* string_to_val (std::string s, unsigned &size) {
 	const char* interim_conversion_string = s.c_str();
 	//size = s.length();
 	size = strlen(interim_conversion_string);
-	std::cout<<"length was: " << size << '\n';
+	//std::cout<<"length was: " << size << '\n';
 	void* val = operator new(size);
 	memcpy(val, (void*) interim_conversion_string, size);
 	return val;
@@ -30,31 +30,31 @@ HTTP_request::HTTP_request() {
 HTTP_request::~HTTP_request() {}
 
 void HTTP_request::parse_raw_request (char* raw) {
-	printf("%s\n",raw);
-	std::cout<<"1 request\n";
+	//printf("%s\n",raw);
+	//std::cout<<"1 request\n";
 	const char* delimiter = "\n";
 	char* token;
-	std::cout<<"1.5\n";
+	//std::cout<<"1.5\n";
 	token = strtok(raw, delimiter);
 	verb = token;
-	std::cout<<"2\n";
+	//std::cout<<"2\n";
 	token = strtok(nullptr, delimiter);
 	URI = token;
-	std::cout<<"3\n";
+	//std::cout<<"3\n";
 	token = strtok(nullptr, delimiter);
 	version = token;
-	std::cout<<"4\n";
+	//std::cout<<"4\n";
 	token = strtok(nullptr, delimiter);
 	while ((token[0] != ' ') && (token[0] != '\0')) {
-		std::cout<<"5\n";
+		//std::cout<<"5\n";
 		std::string s(token);
 		header_lines.push_back(s);
 		token = strtok(nullptr, delimiter);
 	}
-	std::cout<<"6\n";
+	//std::cout<<"6\n";
 	token = strtok(nullptr, delimiter);
 	body = token;
-	std::cout<<"7\n";
+	//std::cout<<"7\n";
 }
 
 std::string HTTP_request::to_string() {
@@ -79,29 +79,29 @@ HTTP_response::HTTP_response() {
 HTTP_response::~HTTP_response(){}
 
 void HTTP_response::parse_raw_response (char* raw) {
-	printf("%s\n",raw);
-	std::cout<<"1 response\n";
+	//printf("%s\n",raw);
+	//std::cout<<"1 response\n";
 	const char* delimiter = "\n";
 	char* token;
-	std::cout<<"1.5\n"; 
+	//std::cout<<"1.5\n"; 
 	token = strtok(raw, delimiter);
 	version = token;
-	std::cout<<"2\n";
+	//std::cout<<"2\n";
 	token = strtok(nullptr, delimiter);
 	code = token;
-	std::cout<<"3\n";
+	//std::cout<<"3\n";
 	token = strtok(nullptr, delimiter);
-	std::cout<<"4\n";
+	//std::cout<<"4\n";
 	while ((token[0] != ' ') && (token[0] != '\0')) {
-		std::cout<<"5\n";
+		//std::cout<<"5\n";
 		std::string s(token);
 		header_lines.push_back(s);
 		token = strtok(nullptr, delimiter);
 	}
-	std::cout<<"6\n";
+	//std::cout<<"6\n";
 	token = strtok(nullptr, delimiter);
 	body = token;
-	std::cout<<"7\n";
+	//std::cout<<"7\n";
 }
 
 std::string HTTP_response::to_string() {
