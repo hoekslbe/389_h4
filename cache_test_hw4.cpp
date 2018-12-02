@@ -155,7 +155,7 @@ TEST_CASE ("Testing SPACE_USED") {
     }
 
 }
-/*
+
 // Test the functionality of the set function on a cache in a variety
 // of cases 
 TEST_CASE ("Testing SET functionality") {
@@ -163,26 +163,36 @@ TEST_CASE ("Testing SET functionality") {
     // Create keys and values to be used in population of caches in testing
 
     Cleaner cleanup;
-    Cache::index_type maxmem = 12;
-    Cache set_test_cache(maxmem);
-    Cache::index_type size = sizeof(int);
+    //Cache::index_type maxmem = 12;
+    //Cache set_test_cache(maxmem);
+    //Cache::index_type size = sizeof(int);
+
+	std::shared_ptr<Cache> cacheP = CacheHolder::getCachePointer();
 
     Cache::key_type key1 = "first_key";
-    Cache::val_type val1 = (void*) new int(1);
+	std::string s1 = "first_message";
+	Cache::index_type size1 = 1;
+    Cache::val_type val1 = string_to_val(s1, size1);
 
     Cache::key_type key2 = "second_key";
-    Cache::val_type val2 = (void*) new int(2);
+	std::string s2 = "second_message";
+	Cache::index_type size2 = 1;
+    Cache::val_type val2 = string_to_val(s2, size2);
 
     Cache::key_type key3 = "third_key";
-    Cache::val_type val3 = (void*) new int(3);
+    std::string s3 = "third_message";
+	Cache::index_type size3 = 1;
+    Cache::val_type val3 = string_to_val(s3, size3);
 
     Cache::key_type key4 = "fourth_key";
-    Cache::val_type val4 = (void*) new int(4);
+    std::string s4 = "fourth_message";
+	Cache::index_type size4 = 1;
+    Cache::val_type val4 = string_to_val(s4, size4);
 
-    cleanup.add(val1, size);
-    cleanup.add(val2, size);
-    cleanup.add(val3, size);
-    cleanup.add(val4, size);
+    cleanup.add(val1, size1);
+    cleanup.add(val2, size2);
+    cleanup.add(val3, size3);
+    cleanup.add(val4, size4);
 
     // Set get_size to a pointless int value that will be changed 
     // when a get is run to reflect the size of the value gotten
@@ -190,34 +200,35 @@ TEST_CASE ("Testing SET functionality") {
 
     SECTION ("Set a value in an empty cache") {
         
-        set_test_cache.set(key1, val1, size);
+        cacheP->set(key1, val1, size1);
 
-        Cache::val_type get_result = set_test_cache.get(key1, get_size); 
+        Cache::val_type get_result = cacheP->get(key1, get_size); 
 
 		if (get_result != nullptr) {cleanup.add(get_result, get_size);}
 
         // Check that the get method on the key returns a pointer to the expected
         // value associated with that key
-        REQUIRE( *((int*) get_result) == *((int*) val1));
+		cacheP->del(key1);
+        REQUIRE(val_to_string(get_result, get_size) == s1);
     }
 
     SECTION ("Set a value overwriting an existing val in cache") {
         // Set a value into the cache that can be overwritten
-        set_test_cache.set(key1, val1, size);
-        Cache::index_type get_size = sizeof(int);
+        cacheP->set(key1, val1, size1);
         // Overwrite the first value with a different value on the same key
-        set_test_cache.set(key1, val2, size);
+        cacheP->set(key1, val2, size2);
 
-        Cache::val_type get_result = set_test_cache.get(key1, get_size);
+        Cache::val_type get_result = cacheP->get(key1, get_size);
 
 		if (get_result != nullptr) {cleanup.add(get_result, get_size);}
 
         // Check that the get method on the initial key returns the 
         // updated value
-        REQUIRE( *((int*) get_result) == *((int*) val2));
+		cacheP->del(key1);
+        REQUIRE( val_to_string(get_result, get_size) == s2 );
 
     }
-
+	/*
     SECTION ("Try to set a value in a full cache") {
         // filling cache
         set_test_cache.set(key1, val1, size);
@@ -229,7 +240,7 @@ TEST_CASE ("Testing SET functionality") {
         // check that the new key gets the right val from the cache
         REQUIRE( *((int*) set_test_cache.get(key4, get_size)) == *((int*) val4));
     }
-
+	
     // The setup for this is similar to the previous test, 
     // but the REQUIRE is checking for something different,
     // so it must be done separately.
@@ -245,12 +256,13 @@ TEST_CASE ("Testing SET functionality") {
         Cache::index_type used_space = set_test_cache.space_used();
         REQUIRE( used_space == maxmem );
     }
-
+	*/
     SECTION ("Check that the value is deep copied when it is set") {
 
-        set_test_cache.set(key1, val1, size);
-        Cache::val_type get_result = set_test_cache.get(key1, get_size);
-
+        cacheP->set(key1, val1, size1);
+        Cache::val_type get_result = cacheP->get(key1, get_size);
+		if (get_result != nullptr) {cleanup.add(get_result, get_size);}
+		cacheP->del(key1);
         // If the pointer from get_result matches the pointer to 
         // val1, we know val1 wasn't deep copied when it was set to 
         // the cache. 
@@ -263,27 +275,28 @@ TEST_CASE ("Testing DEL") {
     Cleaner cleanup;
 
     Cache::key_type key = "cachekey";
-    Cache::val_type val = (void*) new int(3);
-    Cache::index_type size = sizeof(int);
+	std::string s = "some_message";
+	Cache::index_type size = 1;
+    Cache::val_type val = string_to_val(s, size);
     cleanup.add(val, size);
 
     Cache::index_type get_size = 1;
 
-    Cache cache(size + 1);
+    std::shared_ptr<Cache> cacheP = CacheHolder::getCachePointer();
 
     SECTION ("Deleting an item present in the cache removes the item") {
-        cache.set(key, val, size);
-        cache.del(key);
-        Cache::val_type out = cache.get(key, get_size);
+        cacheP->set(key, val, size);
+        cacheP->del(key);
+        Cache::val_type out = cacheP->get(key, get_size);
         REQUIRE(out == nullptr);
     }
 
     SECTION ("Deleting an item that isn't in the cache does nothing") {
-        cache.set(key, val, size);
-        cache.del("nottherightkey");
-        Cache::val_type out = cache.get(key, get_size);
-        REQUIRE(*((int*) out) == *((int*) val));
+        cacheP->set(key, val, size);
+        cacheP->del("nottherightkey");
+        Cache::val_type out = cacheP->get(key, get_size);
+		cacheP->del(key);
+        REQUIRE(val_to_string(out, get_size) == s);
     }
 
 }
-*/
