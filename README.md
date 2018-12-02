@@ -21,7 +21,7 @@ The server should be able to perform a number of operations on the cache object 
    - POST /shutdown: Upon receiving this message, the server stops accepting requests, finishes up any requests in-flight, cleans up the cache (frees resources) and exists cleanly.
 
 System services failure handling:
-/// should we put info about possible failures in the system services category as well? the reading sort of implies this 
+   Error codes are returned to the user corresponding to the type of failure that occurred if a request is improperly served. 
 
 3. Metrics:
 
@@ -36,19 +36,29 @@ System services failure handling:
 Throughput and bandwidth are closely related. Throughput is bounded by the maximum server response time we want requests to be served in, whereas bandwidth is represented by the maximum amount of data that can be passed through the server in bits per second. 
 
 4. Parameters potentially affecting performance:
+   
+   System parameters: 
 
- (a) Overloading of either server or client CPU. Overloading occurs when the server or client CPU runs out of resources, most often processor or RAM resources, and this can occur for a couple of reasons: 
+    (a) Overloading of either server or client CPU. Overloading occurs when the server or client CPU runs out of resources, most often processor or RAM resources, and this can occur for a couple of reasons: 
 
-   (1) Processes running on the machine other than the server-client program limiting available resources 
+      - Processes running on the machine other than the server-client program limiting available resources 
 
-   (2) High request load on the network overconsuming processor or RAM resources
+      - High request load on the network overconsuming processor or RAM resources
 
- (c) Quality of the network connection: whether server-client program is running on a single computer, wirelessly between two computers, or over ethernet connection
+    (b) Quality of the network connection: whether server-client program is running on a single computer, wirelessly between two computers, or over ethernet connection
 
- (d) Electrical power availability: If running on a laptop, is it plugged in? Computer working to preserve battery life can affect performance of system operations.
+    (c) Electrical power availability: If running on a laptop, is it plugged in? Computer working to preserve battery life can affect performance of system operations.
 
- (e) Server design itself, if there are bugs or fundamental design flaws that cause overconsumption of resources in operations despite a seemingly low request load and stable network connection
+    (d) Server design itself, if there are bugs or fundamental design flaws that cause overconsumption of resources in operations despite a seemingly low request load and stable network connection
+   
+   Workload parameters: 
 
+    (e) Distribution of user requests 
+    
+    (f) Size of values requested for operation. SET requests for values that exceed the max memory of the cache (1024 bytes) will not be accepted by the server, but beneath the maxmem ceiling, the size of values requested for any operation may affect performance. 
+    
+    (g) User request frequency
+   
 5. Factors of Study:
 
 - client "SET" inputs, small and large
