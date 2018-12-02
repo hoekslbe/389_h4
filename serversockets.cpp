@@ -147,15 +147,26 @@ int running = true;
  }
 
  // takes a reference to the file descriptor for the server socket
- void serv_POST(int& serv_socket) {
+ HTTP_response serv_POST(int& serv_socket, HTTP_request& request_det) {
  	// turn off further receiving operations to the socket,
  	// but down not disable send operations yet, in case anything
  	// needs to finish
  	// shutdown is from <sys/socket.h>
- 	shutdown(serv_socket, SHUT_RD);
+	HTTP_response response;
+
  	// make sure all of the requests are filled before shutting down further 
  	// writes with SHUT_WR ? 
  	// exit cleanly?
+	if (request_det.URI == "/shutdown") {
+ 		shutdown(serv_socket, SHUT_RD);
+		running = false;
+		response.code = "200";
+		response.body = "Shutting down";
+	} else {
+		response.code = "400";
+		response.body = "Unsupported POST command";
+	}
+	return response;
  }
  
  // Main parses command line arguments indicating maxmem and/or portnum,
@@ -267,7 +278,7 @@ int running = true;
 				serv_response = serv_HEAD(client_request);
 			} else if (client_request.verb == "POST") {
 				// call the POST helper with server socket, shuts down the server 
-				serv_POST(server_socket_fd);
+				serv_response = serv_POST(server_socket_fd, client_request);
 			}
 		bool valid_response = check_resp(serv_response);
 		if (valid_response == false ) {
