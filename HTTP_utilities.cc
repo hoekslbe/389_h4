@@ -1,6 +1,8 @@
 #include "HTTP_utilities.hh"
 #include <iostream>
 
+// Accesses the void* val and converts 'size' number of bytes from that 
+// pointer to a std::string representation of the data stored at the pointer.  
 std::string val_to_string(const void* val, const unsigned size) {
 	char interim_conversion_string[MAX_MESSAGE_SIZE];
 	memset(interim_conversion_string, '\0', size + 1);
@@ -9,54 +11,52 @@ std::string val_to_string(const void* val, const unsigned size) {
 	return converted_string;
 }
 
+// Takes a std::string and a dummy reference 'size' and returns a void pointer
+// allocated to the c-string representation of the input std::string.
 void* string_to_val (std::string s, unsigned &size) {
 	const char* interim_conversion_string = s.c_str();
-	//size = s.length();
 	size = strlen(interim_conversion_string);
-	//std::cout<<"length was: " << size << '\n';
+	// Allocates 'size' number of bytes to a void pointer now that 'size'
+	// is set to the length of the input string's c-string form
 	void* val = operator new(size);
 	memcpy(val, (void*) interim_conversion_string, size);
 	return val;
 }
 
+// HTTP request conversion tools 
 
+// Constructor and destructor for HTTP requests 
 HTTP_request::HTTP_request() {
 	verb = " ";
 	URI = " ";
 	version = HTTP_VERSION;
 	body = " ";
 }
-
 HTTP_request::~HTTP_request() {}
 
+// Takes in a char pointer to an unformatted 
+// HTTP_request string and parses it into tokens in order
+// to assign the proper values to the HTTP_request fields based on input
 void HTTP_request::parse_raw_request (char* raw) {
-	//printf("%s\n",raw);
-	//std::cout<<"1 request\n";
 	const char* delimiter = "\n";
 	char* token;
-	//std::cout<<"1.5\n";
 	token = strtok(raw, delimiter);
 	verb = token;
-	//std::cout<<"2\n";
 	token = strtok(nullptr, delimiter);
 	URI = token;
-	//std::cout<<"3\n";
 	token = strtok(nullptr, delimiter);
 	version = token;
-	//std::cout<<"4\n";
 	token = strtok(nullptr, delimiter);
 	while ((token[0] != ' ') && (token[0] != '\0')) {
-		//std::cout<<"5\n";
 		std::string s(token);
 		header_lines.push_back(s);
 		token = strtok(nullptr, delimiter);
 	}
-	//std::cout<<"6\n";
 	token = strtok(nullptr, delimiter);
 	body = token;
-	//std::cout<<"7\n";
 }
 
+// Converts an HTTP_request object to a std::string 
 std::string HTTP_request::to_string() {
 	std::string to_return = "";
 	to_return += verb + "\n";
@@ -70,7 +70,9 @@ std::string HTTP_request::to_string() {
 	return to_return;
 }
 
+// HTTP response conversion tools 
 
+// HTTP response constructor and destructor
 HTTP_response::HTTP_response() {
 	version = HTTP_VERSION;
 	code = " ";
@@ -78,32 +80,26 @@ HTTP_response::HTTP_response() {
 }
 HTTP_response::~HTTP_response(){}
 
+// Parses a raw HTTP response string taken in as a char pointer to the 
+// string, 
 void HTTP_response::parse_raw_response (char* raw) {
-	//printf("%s\n",raw);
-	//std::cout<<"1 response\n";
 	const char* delimiter = "\n";
 	char* token;
-	//std::cout<<"1.5\n"; 
 	token = strtok(raw, delimiter);
 	version = token;
-	//std::cout<<"2\n";
 	token = strtok(nullptr, delimiter);
 	code = token;
-	//std::cout<<"3\n";
 	token = strtok(nullptr, delimiter);
-	//std::cout<<"4\n";
 	while ((token[0] != ' ') && (token[0] != '\0')) {
-		//std::cout<<"5\n";
 		std::string s(token);
 		header_lines.push_back(s);
 		token = strtok(nullptr, delimiter);
 	}
-	//std::cout<<"6\n";
 	token = strtok(nullptr, delimiter);
 	body = token;
-	//std::cout<<"7\n";
 }
 
+// Converts an HTTP response to a std::string and returns the string
 std::string HTTP_response::to_string() {
 	std::string to_return = "";
 	to_return += version + "\n";
@@ -116,9 +112,12 @@ std::string HTTP_response::to_string() {
 	return to_return;
 }
 
+// JSON conversion tools
 
+// JSON formatted string constructor and destructor 
 JSON::JSON () {}
 JSON::~JSON () {}
+
 void JSON::parse_string(std::string s) {
 	char * to_parse = (char*)(s.c_str());
 	const char* delimiters = "{ ,:}";
@@ -153,10 +152,14 @@ std::string JSON::to_string(){
 	return to_return;
 }
 
+// Takes a key in std::string form, a void pointer to some value, 
+// and a size for that value, passes the val and size to the val_to_string
+// conversion function to format it, and maps the key and value into the k-v map. 
 void JSON::add(const std::string key, const void* val, const unsigned size) {
 	kv_map_[key] = val_to_string(val, size);
 }
 
+// Takes a key and value in std::string form and puts them in the k-v map.
 void JSON::add(const std::string key, const std::string val) {
 	kv_map_[key] = val;
 }
