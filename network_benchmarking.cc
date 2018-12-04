@@ -57,9 +57,10 @@ struct KeyValueStore { // not a map or anything - just stores keys + values, and
 	}
 
 	void* get_value (unsigned &size) {
-		std::string val = *(values_[value_index_]);
+		std::pair<void*, unsigned> *val_size_pair = values_[value_index_];
 		value_index = (value_index_ + 1) % values_.size();
-		return val;
+		size = val_size_pair->second;
+		return val_size_pair->first;
 	}
 	std::vector<std::string> keys_;
 	std::vector<std::pair<void*, unsigned> > values_;
