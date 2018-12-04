@@ -19,16 +19,8 @@
 const int PORT = 6114;
 const std::string SERVER = "127.0.0.1";
 
-
-
-//To do:
-	//write an http generating function
-	//write an http parsing function (a la JSON-parsing function)
-	// use them in the Impl methods.  
-
-// Helper function: converts a JSON into an unordered map which sends json-keys to json-values (values are char pointers pointing into subsections of obj, which is changed - keys are c++ strings)
-
 struct Cache::Impl {
+	// Create a dummy client socket to be set by socket() and an empty buffer for messages 
 	int sock;
 	struct sockaddr_in address;
 	struct sockaddr_in serv_addr;
@@ -37,12 +29,13 @@ struct Cache::Impl {
 	Impl(Cache::index_type maxmem, Cache::hash_func hasher) {
 		if (maxmem == maxmem + 1) {
 			if (hasher) {
-				sock = 1; // do nothing?
+				sock = 1;
 			}
 		}
 	
 		sock = 0;
 
+		// Creates a socket to assign to 'sock' or gives an error message if creation fails
 		if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 			printf("\n Socket creation error \n"); 
 			assert(false);
@@ -53,14 +46,13 @@ struct Cache::Impl {
 		serv_addr.sin_addr.s_addr = INADDR_ANY;
 		serv_addr.sin_port = htons(PORT); 
 
-		
-
+		// Converts server address into binary form or prints a message if invalid address
 		if(inet_pton(AF_INET, SERVER.c_str(), &serv_addr.sin_addr)<=0) { 
 			printf("\nInvalid address/ Address not supported \n"); 
 			assert(false); 
 		} 
-		
 
+		// Connects to the server or prints a message if unsuccessful
 		if (connect(sock, (struct sockaddr *)&serv_addr, sizeof(serv_addr)) < 0) { 
 			printf("\nConnection Failed \n"); 
 			assert(false); 
@@ -73,6 +65,9 @@ struct Cache::Impl {
 	~Impl() {
 	}
 
+	/* Handles get requests, formatting and passing them to the server, receiving and parsing
+	   the server's response, and returning a void pointer to the value retrieved, or nullptr
+	   if the get is unsuccessful. */ 
 	Cache::val_type get(Cache::key_type key, Cache::index_type &valsize){
 		HTTP_request request;
 		request.verb = "GET";
@@ -91,52 +86,41 @@ struct Cache::Impl {
 		if (response.code == "200") {
 			JSON result;
 			result.parse_string(response.body);
-			//std::cout<<result.to_string()<<'\n';
 			auto r = *(result.find(key));
-			//std::cout<<r.first<<'\n';
-			//std::cout<<r.second<<'\n';
-			//std::cout<<string_to_val(r.second, valsize)<<std::endl;
-			//std::cout<<*((int*) string_to_val(r.second, valsize))<<std::endl;
-			//std::cout<<valsize<<std::endl;
 			Cache::val_type val = string_to_val((result.find(key))->second, valsize);
 			return val;
 		} else {
-			//std::cout<<"'GET' failed - non-200 response code - trying to get '" << key << "'\n";
 			valsize = 0;
 			return nullptr;
 		}
 	}
+
+	/* Handles client set requests, requesting, parsing server response, and returning
+	a value indicating success or failure based on the code returned by the server. */
 	int set(Cache::key_type key, Cache::val_type val, Cache::index_type size){
-		//std::cout<<"1\n";
+		// Create an empty HTTP request, fill it with the indicated put request 
 		HTTP_request request;
 		request.verb = "PUT";
-		//std::cout<<"2\n";
 		request.URI = "/key/" + key + "/" + val_to_string(val, size);
-		//std::cout << "3\n";
-		//std::cout<<request.to_string();
-		//std::cout << "c++ len" << request.to_string().length()<<"\n";
-		//std::cout<<request.to_string().c_str();
+		// Convert the request to a c-string so it can be passed to the socket
 		const char* request_string = (request.to_string()).c_str();
-		//std::cout<< "c len" << strlen(request_string)<<"\n";
-		//std::cout << "4\n";
 		send(sock, request_string, request.to_string().length(), 0);
-		//std::cout << "5\n";
+		// Zero the buffer in preparation for receipt of the server reponse 
 		memset(buffer, 0, MAX_MESSAGE_SIZE);
-		//std::cout << "6\n";
 		if ((recv(sock, buffer, MAX_MESSAGE_SIZE, 0) < 0) || (strlen(buffer) == 0)) {
 			return -2;
 		}
-		//std::cout << "7\n";
 		HTTP_response response;
-		//std::cout << "8\n";
 		response.parse_raw_response(buffer);
-		//std::cout << "9\n";
 		if (response.code == "200") {
 			return 0;
 		} else {
 			return -1;
 		}
 	}
+
+	/* Handles client requests to delete, parses server response and returns a value indicating 
+	success or failure based on the response code returned by the server. */
 	int del(Cache::key_type key){
 		HTTP_request request;
 		request.verb = "DELETE";
@@ -163,24 +147,28 @@ struct Cache::Impl {
 		}
 	}
 	
+	/* Handles the client side of calls to space_used, from sending request to parsing 
+	   the server response, and returns a void pointer to the value of current space used 
+	   in the cache. */
 	Cache::index_type space_used() {
+		// Create an HTTP request set to GET/memsize
 		HTTP_request request;
 		request.verb = "GET";
 		request.URI = "/memsize";
+		// Convert the HTTP request to a c-style string so it can be passed to the socket
 		const char* request_string = (request.to_string()).c_str();
+		// Send the request over the socket
 		send(sock, request_string, request.to_string().length(), 0);
+		// Make sure the buffer is clear before receiving response from the server
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);
 		recv(sock, buffer, MAX_MESSAGE_SIZE, 0);
+		// Create an empty HTTP response to parse the server response into
 		HTTP_response response;
 		response.parse_raw_response(buffer);
+		// Create an empty JSON and parse the server's response into it
 		JSON result;
 		result.parse_string(response.body);
-		/*
-		unsigned size;
-		void* val = string_to_val(result.find("memused")->second, size);
-		Cache::index_type to_return = *((Cache::index_type*) val);
-		operator delete(val, size);
-		*/
+		// Find the returned value for memory used in the k-v pair it belongs to and return it
 		std::string size_string = result.find("memused")->second;
 		unsigned to_return = (unsigned) stoi(size_string);
 		return to_return;
@@ -188,9 +176,7 @@ struct Cache::Impl {
 
 };
 
-
-
-// construct the cache and consequently the Impl
+// Constructs the cache and consequently the Impl
 Cache::Cache(Cache::index_type maxmem, hash_func hasher) 
 	: pImpl_(new Impl(maxmem, hasher))
 {
@@ -199,22 +185,22 @@ Cache::Cache(Cache::index_type maxmem, hash_func hasher)
 Cache::~Cache(){
 }
 
-// Call set in Impl
+// Calls set in Impl
 int Cache::set(Cache::key_type key, Cache::val_type val, Cache::index_type size){
 	return pImpl_->set(key, val, size);
 }
 
-// Call get in Impl
+// Calls get in Impl
 Cache::val_type Cache::get(Cache::key_type key, Cache::index_type& size) const{
 	return pImpl_->get(key, size);
 }
 
-// Call del in Impl
+// Calls del in Impl
 int Cache::del(Cache::key_type key){
 	return pImpl_->del(key);
 }
 
-// Call space_used in Impl
+// Calls space_used in Impl
 Cache::index_type Cache::space_used() const{
 	return pImpl_->space_used();
 }

@@ -118,6 +118,7 @@ std::string HTTP_response::to_string() {
 JSON::JSON () {}
 JSON::~JSON () {}
 
+// Converts a properly formatted JSON string into an unordered map owned by the object
 void JSON::parse_string(std::string s) {
 	char * to_parse = (char*)(s.c_str());
 	const char* delimiters = "{ ,:}";
@@ -134,9 +135,12 @@ void JSON::parse_string(std::string s) {
 	}
 }
 
+// Finds a key by string in the JSON object map 
 std::unordered_map<std::string, std::string>::iterator JSON::find(std::string key) {
 	return kv_map_.find(key);
 }
+
+// Converts a JSON object's unordered map into a JSON-formatted string
 std::string JSON::to_string(){
 	std::string to_return = "{ ";
 	auto kv_it = kv_map_.begin();
@@ -154,12 +158,12 @@ std::string JSON::to_string(){
 
 // Takes a key in std::string form, a void pointer to some value, 
 // and a size for that value, passes the val and size to the val_to_string
-// conversion function to format it, and maps the key and value into the k-v map. 
+// conversion function to format it, and maps the key and value into the JSON object's k-v map. 
 void JSON::add(const std::string key, const void* val, const unsigned size) {
 	kv_map_[key] = val_to_string(val, size);
 }
 
-// Takes a key and value in std::string form and puts them in the k-v map.
+// Takes a key and value in std::string form and puts them in the JSON object's k-v map.
 void JSON::add(const std::string key, const std::string val) {
 	kv_map_[key] = val;
 }
