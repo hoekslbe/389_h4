@@ -14,20 +14,17 @@
 
 #include <iostream>
 
-// header file for HTTP conversion utilities written by Robert and documented by Betsy
+// This is a header file for HTTP conversion utilities written by Robert and documented by Betsy
 #include "HTTP_utilities.hh"
 
 const int DEFAULT_MAXMEM = 1024;
-
-// Club penguin is tcp 6113 so we're in good company using this portnum as default if 
- 	// no portnum is given in the command args
 const int DEFAULT_PORTNUM = 6114;
+
 // A global variable for the state of the server, whether it should be on or not
 int running = true;
 
-//This helper function checks to see if a response is empty; it is called at the end of 
-//an operation helper function to ensure that function returns a non-empty response.
-//A return value of -1 indicates failure, 0 indicates success. 
+/* This is called at the end of an operation function to ensure that it
+   returns a non-empty response. */ 
  bool check_resp(HTTP_response resp) {
  	if((resp.code == " ") && (resp.body == " ")) {
  		std::cout<<"Empty response";
@@ -38,7 +35,7 @@ int running = true;
  	}
  }
 
-// This helper function handles the request options following a 'GET' verb
+// A helper function that handles the request options following a 'GET' verb
 // and returns the proper HTTP response to be packaged and sent to the client
  HTTP_response serv_GET(Cache& cache, HTTP_request& request_det) {
  	// Create empty objects based on HTTP_utilities for an HTTP_response and a JSON string 
@@ -48,8 +45,6 @@ int running = true;
  	if (request_det.URI == "/memsize") {
  		// Find out how much space is used in cache
  		Cache::index_type memsize = cache.space_used();
- 		// Make the memsize into response form and set response to it
- 		//Cache::index_type * memsize_ptr = &memsize;
  		// Call the add method in the JSON struct
  		results.add("memused", std::to_string(memsize));
  		// Cast the JSON back to a string with the JSON tostring method
