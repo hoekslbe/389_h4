@@ -74,7 +74,7 @@ Throughput and bandwidth are closely related. Throughput is bounded by the maxim
   The workload will consist of a script of queries passed from client to server based on functional analytical models of use patterns from a study of the workload of Memcached. 
 
 8. Experimental Design:
-  We will 
+  We will test the performance of our client-server infrastructure through running both processes on a single computer. This will eliminate the overhead latency of the performance of a network that would be present if we tested our system between two or more computers. Because this server is not optimized for multi-threading, if we were to test over a network, performance would only be able to be evaluated between one server-client pairing at a time. By running on a single computer to isolate from network latency we can better understand the raw performance of our system, however, in an actual use scenario, a network would be involved, so there is some separation from real contexts in this experimental design. Additionally, there could be effects on latency from the CPU perspective as it runs both client and server programs and the testing program. 
   
 9. Data Analysis and Interpretation
 
