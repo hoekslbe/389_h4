@@ -109,24 +109,63 @@ struct RequestDistribution { // stores a probability distribution over our diffe
 
 struct TestParameters {
 
-	std::vector<std::string>* get_requests
+	TestParameters() {}
+	~TestParameters() {}
+
+	void add_item(std::string request, std::string key, void* val, Cache::index_type size) {
+		requests_.push_back(request);
+		keys_.push_back(key);
+		vals_.push_back(val);
+		sizes_.push_back(size);
+	}
+
+	const std::vector<std::string>& get_requests() {return requests_;}
+	const std::vector<std::string>& get_keys() {return keys_;}
+	const std::vector<void*>& get_vals() {return vals_;}
+	const std::vector<Cache::index_type>& get_sizes() {return sizes_;}
+	
+	std::vector<std::string> requests_;
+	std::vector<std::string> keys_;
+	std::vector<void*> vals_;
+	std::vector<Cache::index_type> sizes_;
 }
 
-duration<double, nano> measure_total_time(Cache &cache, 
-										const std::vector<std::string> &requests, 
-										const std::vector<std::string> &keys, 
-										const std::vector<void*> &vals, 
-										const std::vector<Cache::index_type> &sizes) {
+duration<double, nano> measure_total_time(Cache &cache, const TestParameters &parameters) {
+
+	std::vector<std::string> requests = parameters.get_requests();
+	std::vector<std::string> keys = parameters.get_keys();
+	std::vector<void*> vals = parameters.get_vals();
+	std::vector<Cache::index_type> sizes = parameters.get_sizes();
+
 	assert(requests.size() == keys.size());
 	assert(keys.size() == vals.size());
 	assert(vals.size() == sizes.size());
+	
 	std::string request;
 	unsigned get_size;
+	void* out;
 
 	const auto start_time = steady_clock::now();
 
 	for (int i = 0; i < requests.size(); ++i) {
-		request = requests[i];
+		request = *(requests[i]);
+		switch (request)
+		{
+			case "GET" :
+				out = cache.get(*(keys[i]), get_size);
+				operator delete(out, get_size);
+				break;
+			case "SET" :
+				cache.set(*(keys[i]), *(vals[i]), *(sizes[i]));
+				break;
+			case "DEL" :
+				cache.del(*(keys[i]));
+				break;
+			case "SPA" :
+				cache.space_used();
+				break;
+		}
+		/*
 		if (request == "GET") {
 			out = cache.get (keys[i], get_size);
 			operator delete(out, get_size);
@@ -140,6 +179,7 @@ duration<double, nano> measure_total_time(Cache &cache,
 		} else if (request == "SPA") {
 			cache.space_used();
 		}
+		*/
 	}
 
 	const auto end_time = steady_clock::now();
@@ -151,45 +191,26 @@ duration<double, nano> measure_total_time(Cache &cache,
 
 //make a struct to store these inputs
 
-void assemble_requests_to_measure(std::vector<std::string> &requests, 
-									std::vector<std::string> &keys, 
-									std::vector<void*> vals,
-									std::vector<Cache::index_type &sizes, 
-									KeyValueStore &kvs,
+TestParameters assemble_requests_to_measure(KeyValueStore &kvs,
 									const RequestDistribution &distribution, 
 									const unsigned num_requests) {
-	assert(requests.size() == 0 && "requests vector was not empty");
-	assert(keys.size() == 0 && "keys vector was not empty");
-	assert(vals.size() == 0 && "vals vector was not empty");
-	assert(sizes.size() == 0 && "sizes vector was not empty");
-	
+	TestParameters to_return;
+
 	for (unsigned i = 0; i < num_requests, ++i) {
 		std::string request = distribution.get_request();
-		requests.push_back(request);
-		if (request == "GET") {
-			//add a key to keys
-			keys.push_back(kvs.get_key());
-			vals.push_back(nullptr);
-			sizes.push_back(0);
+		std::string key = "";
+		void* val = nullptr;
+		Cache::index_type size = 0;
+		if (request != "SPA") {
+			key = kvs.get_key();
 
-		} else if (request == "SET") {
-			keys.push_back(kvs.get_key());
-			unsigned get_size;
-			vals.push_back(kvs.get_val(get_size));
-			sizes.push_back(get_size)
-		
-		} else if (request == "DEL") {
-			keys.push_back(kvs.get_key());
-			vals.push_back(nullptr);
-			sizes.push_back(0);
-
-			
-		} else if (request == "SPA") {
-			keys.push_back("");
-			vals.push_back(nullptr);
-			sizes.push_back(0);
 		}
+		if (request == "SET") {
+			val = kvs.get_val(size);
+		}
+		to_return.add_item(request, key, val, size);
 	}
+	return to_return;
 }
 
 
@@ -208,9 +229,11 @@ int main() {
 	// case 1: large keys, 
 	// build the vectors for latency tests
 
-	Distribution dist(GET_PROPORTION, GET_PROPORTION, DEL_PROPORTION, SPA_PROPORTION);
+	Distribution proportioned(GET_PROPORTION, SET_PROPORTION, DEL_PROPORTION, SPA_PROPORTION);
+	Distribution only_GET(1, 0, 0, 0);
+	Distribution only_SET(0, 1, 0, 0);
+	Distribution only_DEL(0, 0, 1, 0);
+	Distribution only_SPA(0, 0, 0, 1);
 
-	Key_Value_Store kvs_case1()
-
-
+	return 1;
 }
