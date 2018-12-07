@@ -1,10 +1,16 @@
-all: cachetest_hw4 server
+all: cachetest_hw4 server benchmarking_tests
+
+benchmarking_tests: network_benchmarking.o client.o HTTP_utilities.o
+	g++ -o benchmarking_tests network_benchmarking.o client.o HTTP_utilities.o -Wall -Werror -Wextra -pedantic
 
 cachetest_hw4: cache_test_hw4.o client.o HTTP_utilities.o
 	g++ -o cachetest_hw4 cache_test_hw4.o client.o HTTP_utilities.o -Wall -Werror -Wextra -pedantic
 
 server: serversockets.o cache.o evictors.o HTTP_utilities.o
 	g++ -g3 -o server serversockets.o cache.o evictors.o HTTP_utilities.o -Wall -Werror -Wextra -pedantic
+
+network_benchmarking.o:
+	g++ -c network_benchmarking.cc -Wall -Wextra -Werror -pedantic
 
 serversockets.o: serversockets.cpp
 	g++ -c serversockets.cpp -Wall -Werror -Wextra -pedantic

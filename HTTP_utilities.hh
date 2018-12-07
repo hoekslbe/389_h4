@@ -3,6 +3,8 @@
 #include <unordered_map>
 #include <vector>
 
+#pragma once
+
 //Need to change this to our actual HTTP version (whatever it is).  
 const std::string HTTP_VERSION = "HTTP v1.1";
 const unsigned MAX_MESSAGE_SIZE = 1024;
