@@ -8,14 +8,15 @@
 #include <stdlib.h>
 #include <time.h>
 
-
+// parameters for indicating request proportions according to desired workload 
 const unsigned GET_PROPORTION = 1; // these shouldn't be 0.  Figure out what they should be according to the memcached workload.  
 const unsigned SET_PROPORTION = 1;
 const unsigned DEL_PROPORTION = 1;
 const unsigned SPA_PROPORTION = 1;
 
-
-struct KeyValueStore { // not a map or anything - just stores keys + values, and hands them out on request.  Handles the deletion of the values it stores.  
+/* a struct which supports a vector each for storing keys and values and functionality for adding and 
+retrieiving them from storage. */
+struct KeyValueStore { 
 	KeyValueStore(const std::vector<std::string> &keys, const std::vector<std::string> &values) {
 		for (std::string key : keys) {
 			add_key(key);
@@ -26,16 +27,23 @@ struct KeyValueStore { // not a map or anything - just stores keys + values, and
 		key_index_ = 0;
 		value_index_ = 0;
 	}
+	// upon destruction, the existing keys and values will be erased from memory
 	~KeyValueStore() {
 		for (std::pair<void*, unsigned> val_size_pair : values_) {
 			operator delete(val_size_pair.first, val_size_pair.second);
 		}
 	}
-	
+	/* adds a key by name.
+	   after calling string_to_val, size will be set to the length of the c-string form of the key, 
+	   but if something about the string causes its reading to be terminated prematurely (like the presence of an
+	   underscore), the returned size will not match with the given key string's size. Knowing this, the call to string_to_val 
+	   and subsequent assert on returned size will indicate whether the given key string can be successfully passed
+	   through the network by our program. */ 
 	void add_key(std::string key) {
 		unsigned size = 0;
 		void* check_val = string_to_val(key, size);
 		assert(size == key.size() && "There was something wrong with the key you passed in");
+		// delete the bytes utilized in calling check_val before adding the key 
 		operator delete(check_val, size);
 		keys_.push_back(key);
 	}
@@ -45,14 +53,14 @@ struct KeyValueStore { // not a map or anything - just stores keys + values, and
 		key_index_ = (key_index_ + 1) % keys_.size();
 		return key;
 	}
-
+	// add a value by name, checking its validity to be passed through the network with a call to string_to_val
 	void add_value(std::string value_string) {
 		unsigned size = 0;
 		void* val = string_to_val(value_string, size);
 		assert(size == value_string.size() && "There was something wrong with the string you passed in");
 		values_.push_back(std::make_pair(val, size));
 	}
-
+	// get a value to return by byte size 
 	void* get_value (unsigned &size) {
 		std::pair<void*, unsigned> val_size_pair = values_[value_index_];
 		value_index_ = (value_index_ + 1) % values_.size();
@@ -65,7 +73,9 @@ struct KeyValueStore { // not a map or anything - just stores keys + values, and
 	unsigned key_index_;
 };
 
-struct RequestDistribution { // stores a probability distribution over our different request types - 'GET', 'SET', 'DEL', and 'SPA' (spaced_used).  Gives requests according to the distribution with get_request.  
+/* stores a probability distribution over our different request types - 'GET', 'SET', 'DEL', and 'SPA' (spaced_used).  
+Gives requests according to the distribution with get_request. */
+struct RequestDistribution {   
 
 	RequestDistribution (const unsigned GET_factor = 0, const unsigned SET_factor = 0, const unsigned DEL_factor = 0, const unsigned SPA_factor = 0) {
 		
