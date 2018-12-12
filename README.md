@@ -3,10 +3,10 @@ Homework 5 Benchmarking
 
 1. Project Goals/System Definition:
 
-A client and a server make up the system. The server stores and operates on a cache object when information is requested by the client. Both processes can occur on a single machine or between designated client and server machines. To measure the performance of the system in the most isolation, we are evaluating the system by testing it on an individual machine acting as both client and server.  
+A client and a server make up the system. The server stores and operates on a cache object when information is requested by the client. Both processes can occur on a single machine or between designated client and server machines. To measure the performance of the system in isolation, we are evaluating the system by testing it on an individual machine acting as both client and server. Our system is single-threaded. If it were multithreaded, we would probably choose to test it over a network, to decrease the chance of the single CPU becoming overloaded in passing to and from itself over many threads. 
 
 2. System Services:
-The server should be able to perform a number of operations on the cache object it manages if the client connected to it makes a request. The following requests are accepted as HTTP messages:
+The server establishes a socket after parsing the command line requests, and then listens for connections. When data is received through rcv() as a cstring, it is converted to an HTTP request using the HTTP_utilities functionality so that the verb can be parsed, and the request is then handed to a helper function which handles the cache operations expected from that request verb. The following requests are accepted as HTTP messages:
 
    - GET /key/k: Returns a JSON tuple to client with { key: k, value: v } pair (where k is the resource in the request, and value is the appropriate value from the cache), or an error message if the key isn't in the cache.
 
@@ -20,20 +20,20 @@ The server should be able to perform a number of operations on the cache object 
 
    - POST /shutdown: Upon receiving this message, the server stops accepting requests, finishes up any requests in-flight, cleans up the cache (frees resources) and exists cleanly.
 
+Once the request has been handled by the helper function, an HTTP_response is returned to main representing the results to be passed back to the client and/or the success of the operation. The socket doesn't handle 'HTTP_response's, though, so it must be reformatted using HTTP_utilities into a JSON string to be compliant with the TCP socket protocol. The JSON string is then passed back to the socket to be sent to the client, and the server continues to listen for requests until the client sends the POST/shutdown request to turn off the server, which sets the 'running' variable to false to stop the request parsing loop. 
+
 System services failure handling:
    Error codes are returned to the user corresponding to the type of failure that occurred if a request is improperly served. 
 
 3. Metrics:
 
-      (a) Latency of requests made by the client 
+      (a) Latency of individual request types served
 
-      (b) Sustained throughput of the system, where system capacity is defined in terms of the maximum offered load (in requests per second) at which the mean response time of the server remains under 1 millisecond
+      (b) System bandwidth 
+      
+Throughput and bandwidth are closely related. Sustained throughput is bounded by the maximum server response time we want requests to be served in, whereas bandwidth is represented by the maximum amount of data that can be passed through the server in bits per second. 
+We are not considering sustained throughput a metric here because by our design, when a request is made by the client object, it locks until it has a response from the server, and the server can only maintain a connection to one client thread at a time. Given this, there is no way within our current implementation for the server or client side to send or receive more than one request at a time. Throughput would be measured by the server's response to varying numbers of concurrent client requests. 
 
-      (c) Accuracy/correctness of sets, gets, deletes performed on the cache
-
-      (d) System bandwidth  
-
-Throughput and bandwidth are closely related. Throughput is bounded by the maximum server response time we want requests to be served in, whereas bandwidth is represented by the maximum amount of data that can be passed through the server in bits per second. 
 
 4. Parameters potentially affecting performance:
    
@@ -43,9 +43,7 @@ Throughput and bandwidth are closely related. Throughput is bounded by the maxim
 
       - Processes running on the machine other than the server-client program limiting available resources 
 
-      - High request load on the network overconsuming processor or RAM resources
-
-    (b) Quality of the network connection: whether server-client program is running on a single computer, wirelessly between two computers, or over ethernet connection
+      - High request load on the network overconsuming processor or RAM resources 
 
     (c) Electrical power availability: If running on a laptop, is it plugged in? Computer working to preserve battery life can affect performance of system operations.
    
@@ -55,17 +53,16 @@ Throughput and bandwidth are closely related. Throughput is bounded by the maxim
     
     (e) Size of keys and values requested for operation. SET requests for values that exceed the max memory of the cache (1024 bytes) will not be accepted by the server, but beneath the maxmem ceiling, the size of values requested for any operation may affect performance. 
     
-    (f) User request frequency
+    User request frequency would be an important workload parameter if our server was capable of multi-threading, but in our current implementation, varying request frequency will not affect performance since only one client can communicate one request at a time, locking until the server has responded.
+    Quality of the network connection: whether server-client program is running on a single computer, wirelessly between two computers, or over ethernet connection. In our design, network connection will not be a relevant parameter because we will run the system on a single computer.
    
 5. Factors of Study:
     Client requests
-      - SET requests, large and small
-      - GET requests, large and small 
-      - 
+      - SET , large and small
+      - GET , large and small 
+      - DEL ,
+      - Space_used requests
 
-- client "SET" inputs, small and large
-- client requests, leveled in a range of frequencies 
-//- what other parameters? more challenging parameters to measure/adjust?
 
 6. Evaluation Technique: 
   Our system will be evaluated by simulation because we don't have a real application to test within our client-server system.
@@ -74,8 +71,9 @@ Throughput and bandwidth are closely related. Throughput is bounded by the maxim
   The workload will consist of a script of queries passed from client to server based on functional analytical models of use patterns from a study of the workload of Memcached. 
 
 8. Experimental Design:
-  We will test the performance of our client-server infrastructure by running both processes on a single computer. This will eliminate the overhead latency of network performance that would be present if we tested our system between two or more computers communicating over a network. Because this server is not optimized for multi-threading, if we were to test over a network, performance would only be able to be evaluated between one server-client pairing at a time. By running on a single computer to isolate from network latency we can better understand the raw performance of our system; however, in an actual use scenario, a network would be involved, so performance under this experimental design is somewhat separated from real contexts. Additionally, latency could be more strongly affected by the CPU as it runs both client and server programs and the testing program. 
-  We will have 4 test cases, coming from each combination of levels for our parameters:
+  We will test the performance of our client-server infrastructure by running both processes on a single computer. This will eliminate the overhead latency of network performance that would be present if we tested our system between two or more computers communicating over a network. Because this server is not optimized for multi-threading, if we were to test over a network, performance would only be able to be evaluated between one server-client pairing at a time. By running on a single computer to isolate from network latency we can better understand the raw performance of our system; however, in an actual use scenario, a multi-threaded server-client infrastructure operating over a network would be more useful, so performance under this experimental design is somewhat separated from real contexts of application. Additionally, latency could be more strongly affected by the CPU under our design as it handles running the client, server, and testing programs. 
+  
+  We will have 20 test cases, coming from each combination of levels for our parameters:
    1. small keys, small values
    2. small keys, large values
    3. large keys, small values
@@ -83,7 +81,7 @@ Throughput and bandwidth are closely related. Throughput is bounded by the maxim
    
    For each test case, we will measure the latency of each cache request (GET, SET, DEL, and SPACE_USED), as well as the bandwith of our cache.  
    
-   We will determine the latency of each request by measuring the time it takes to make a series of those requests, and then dividing by the number of requests made to get time/request.  We will repeat this process a number of times for each request, and consider the latency of that operation to be the minimum value recorded.  This is because, when measuring latency, we trying to determine the best-case performance of our cache.  
+   We will determine the latency of each request by measuring the time it takes to make a series of those requests, and then dividing by the number of requests made to get time/request.  We will repeat this process a number of times for each request, and consider the latency of that operation to be the minimum value recorded.  This is because when measuring latency we are trying to determine the best-case performance of our cache.  
    
    We will model our test workload after the analysis of Memcached's ETC pool workload given in the Memcached workload analysis paper. The paper indicated an approximately 30:1 GET to UPDATE ratio. We take UPDATE in this context to be equivalent to our SET. 
    
@@ -96,17 +94,3 @@ Throughput and bandwidth are closely related. Throughput is bounded by the maxim
 
 10. Presentation of Data (meaningful, clear graphs)
 
-
-
-Server: The server establishes a socket after parsing the command line requests, and then listens for connections. When data is received through rcv() as a cstring, it is converted to an HTTP request using the HTTP_utilities functionality so that the verb can be parsed, and the request is then handed to a helper function which handles the operations expected from that request verb. 
-    HTTP requests handled:
-        GET/key/k,
-        GET/memsize,
-        PUT/key/k/v,
-        DELETE/key/k,
-        POST/shutdown.
-Once the request has been handled by the helper function, an HTTP_response is returned to main representing the results to be passed back to the client. The socket doesn't handle 'HTTP_response's, though, so it must be reformatted using HTTP_utilities again into a JSON string to be compliant with the socket protocol. Once this has happened, the string is passed back to the socket to be sent to the client, and the server continues to listen for requests until the client sends the POST/shutdown request to turn off the server, changing the 'running' variable to stop the request parsing loop. 
-
-Client: 
-
-HTTP_utilities: 
