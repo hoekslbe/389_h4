@@ -315,34 +315,34 @@ int main() {
 	TestParameters case_19 = assemble_requests_to_measure(lk_sv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
 	TestParameters case_20 = assemble_requests_to_measure(lk_lv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
 
+	// rpns - requests per nanosecond 
+
+	double case_1_rpns = measure_bandwidth(cache, case_1);
+	double case_2_rpns = measure_bandwidth(cache, case_2);
+	double case_3_rpns = measure_bandwidth(cache, case_3);
+	double case_4_rpns = measure_bandwidth(cache, case_4);
+
 	// nspr - nanoseconds per request
 
-	double case_1_nspr = measure_bandwidth(cache, case_1);
-	double case_2_nspr = measure_bandwidth(cache, case_2);
-	double case_3_nspr = measure_bandwidth(cache, case_3);
-	double case_4_nspr = measure_bandwidth(cache, case_4);
+	double case_5_nspr = measure_latency(cache, case_5);
+	double case_6_nspr = measure_latency(cache, case_6);
+	double case_7_nspr = measure_latency(cache, case_7);
+	double case_8_nspr = measure_latency(cache, case_8);
 
-	// rpns - requests per nanosecond
-
-	double case_5_rpns = measure_latency(cache, case_5);
-	double case_6_rpns = measure_latency(cache, case_6);
-	double case_7_rpns = measure_latency(cache, case_7);
-	double case_8_rpns = measure_latency(cache, case_8);
-
-	double case_9_rpns  = measure_latency(cache, case_9);
-	double case_10_rpns = measure_latency(cache, case_10);
-	double case_11_rpns = measure_latency(cache, case_11);
-	double case_12_rpns = measure_latency(cache, case_12);
+	double case_9_nspr  = measure_latency(cache, case_9);
+	double case_10_nspr = measure_latency(cache, case_10);
+	double case_11_nspr = measure_latency(cache, case_11);
+	double case_12_nspr = measure_latency(cache, case_12);
 	
-	double case_13_rpns = measure_latency(cache, case_13);
-	double case_14_rpns = measure_latency(cache, case_14);
-	double case_15_rpns = measure_latency(cache, case_15);
-	double case_16_rpns = measure_latency(cache, case_16);
+	double case_13_nspr = measure_latency(cache, case_13);
+	double case_14_nspr = measure_latency(cache, case_14);
+	double case_15_nspr = measure_latency(cache, case_15);
+	double case_16_nspr = measure_latency(cache, case_16);
 	
-	double case_17_rpns = measure_latency(cache, case_17);
-	double case_18_rpns = measure_latency(cache, case_18);
-	double case_19_rpns = measure_latency(cache, case_19);
-	double case_20_rpns = measure_latency(cache, case_20);
+	double case_17_nspr = measure_latency(cache, case_17);
+	double case_18_nspr = measure_latency(cache, case_18);
+	double case_19_nspr = measure_latency(cache, case_19);
+	double case_20_nspr = measure_latency(cache, case_20);
 	
 
 	return 1;
