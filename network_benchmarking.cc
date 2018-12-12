@@ -7,12 +7,23 @@
 #include <vector>
 #include <stdlib.h>
 #include <time.h>
+#include <algorithm>
 
 // parameters for indicating request proportions according to desired workload 
-const unsigned GET_PROPORTION = 1; // these shouldn't be 0.  Figure out what they should be according to the memcached workload.  
-const unsigned SET_PROPORTION = 1;
+const unsigned GET_PROPORTION = 300; // these shouldn't be 0.  Figure out what they should be according to the memcached workload.  
+const unsigned SET_PROPORTION = 10;
 const unsigned DEL_PROPORTION = 1;
 const unsigned SPA_PROPORTION = 1;
+
+// block_size is the number of requests in a test.  iterations is the number of tests to run.  
+const unsigned BANDWIDTH_TEST_BLOCK_SIZE = 1000;
+const unsigned BANDWIDTH_TEST_ITERATIONS = 10;
+const unsigned LATENCY_TEST_BLOCK_SIZE = 100;
+const unsigned LATENCY_TEST_ITERATIONS = 100; 
+
+
+
+
 
 /* a struct which supports a vector each for storing keys and values and functionality for adding and 
 retrieiving them from storage. */
@@ -204,8 +215,40 @@ TestParameters assemble_requests_to_measure(KeyValueStore &kvs,
 }
 
 
+std::chrono::duration<double, std::nano> measure_average(Cache &cache, TestParameters &parameters, unsigned iterations) {
+	std::vector<std::chrono::duration<double, std::nano>> test_results;
+	for (unsigned i = 0; i < iterations; i++) {
+		test_results.push_back(measure_total_time(cache, parameters));
+	}
+	unsigned total_ticks = 0;
+	for (std::chrono::duration<double, std::nano> dur : test_results) {
+		total_ticks += dur.count();
+	}
+	std::chrono::duration<double, std::nano> out (total_ticks / iterations);
+	return out;
+}
+
+std::chrono::duration<double, std::nano> measure_min(Cache &cache, TestParameters &parameters, unsigned iterations) {
+	std::vector<std::chrono::duration<double, std::nano>> test_results;
+	for (unsigned i = 0; i < iterations; i++) {
+		test_results.push_back(measure_total_time(cache, parameters));
+	}
+	unsigned in_of_min = 0;
+	unsigned min_count = test_results[in_of_min].count();
+	for (unsigned i = 1; i < iterations; i++) {
+		unsigned candidate_count = test_results[i].count();
+		if (candidate_count < min_count) {
+			in_of_min = i;
+			min_count = candidate_count;
+		}
+	}
+	return test_results[in_of_min];
+}
+
+
 // what command line arguments will we need?
 // let's start w/ none
+
 
 int main() {
 	srand(time(NULL));
@@ -224,6 +267,44 @@ int main() {
 	RequestDistribution only_SET(0, 1, 0, 0);
 	RequestDistribution only_DEL(0, 0, 1, 0);
 	RequestDistribution only_SPA(0, 0, 0, 1);
+
+	std::vector<std::string> small_keys {"key1", "key2", "key3"};
+	std::vector<std::string> large_keys {"reallyextremelymuchmuchlarger|key1", "reallyextremelymuchmuchlarger|key2", "reallyextremelymuchmuchlarger|key3"};
+	std::vector<std::string> small_values {"valueNumber1", "valueNumber2", "valueNumber3"} ;
+	std::vector<std::string> large_values {"abcdefghijklmnopqrstuvwxyz|ValueNumber1|zyxwvutsrqponmlkjihgfedcba", 
+											"abcdefghijklmnopqrstuvwxyz|ValueNumber2|zyxwvutsrqponmlkjihgfedcba", 
+											"abcdefghijklmnopqrstuvwxyz|ValueNumber3|zyxwvutsrqponmlkjihgfedcba"} ;
+	KeyValueStore sk_sv(small_keys, small_values);
+	KeyValueStore sk_lv(small_keys, large_values);
+	KeyValueStore lk_sv(large_keys, large_values);
+	KeyValueStore lk_lv(large_keys, large_values);
+
+	TestParameters case_1 = assemble_requests_to_measure(sk_sv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
+	TestParameters case_2 = assemble_requests_to_measure(sk_lv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
+	TestParameters case_3 = assemble_requests_to_measure(lk_sv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
+	TestParameters case_4 = assemble_requests_to_measure(lk_lv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
+
+	TestParameters case_5 = assemble_requests_to_measure(sk_sv, only_GET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_6 = assemble_requests_to_measure(sk_lv, only_GET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_7 = assemble_requests_to_measure(lk_sv, only_GET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_8 = assemble_requests_to_measure(lk_lv, only_GET, LATENCY_TEST_BLOCK_SIZE);
+
+	TestParameters case_9  = assemble_requests_to_measure(sk_sv, only_SET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_10 = assemble_requests_to_measure(sk_lv, only_SET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_11 = assemble_requests_to_measure(lk_sv, only_SET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_12 = assemble_requests_to_measure(lk_lv, only_SET, LATENCY_TEST_BLOCK_SIZE);
+
+	TestParameters case_13 = assemble_requests_to_measure(sk_sv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_14 = assemble_requests_to_measure(sk_lv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_15 = assemble_requests_to_measure(lk_sv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_16 = assemble_requests_to_measure(lk_lv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
+
+	TestParameters case_17 = assemble_requests_to_measure(sk_sv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_18 = assemble_requests_to_measure(sk_lv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_19 = assemble_requests_to_measure(lk_sv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_20 = assemble_requests_to_measure(lk_lv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
+
+
 
 	return 1;
 }
