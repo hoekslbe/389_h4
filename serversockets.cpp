@@ -14,7 +14,7 @@
 
 #include <iostream>
 
-// This is a header file for HTTP conversion utilities written by Robert and documented by Betsy
+// This is a header file for HTTP conversion utilities we created to simplify server-client interaction implementation
 #include "HTTP_utilities.hh"
 
 const int DEFAULT_MAXMEM = 1024;
@@ -141,17 +141,11 @@ int running = true;
 	return response; // not implemented to standards
  }
 
- // takes a reference to the file descriptor for the server socket
+ // takes a reference to the file descriptor for the server socket and shuts down the server. 
  HTTP_response serv_POST(int& serv_socket, HTTP_request& request_det) {
- 	// turn off further receiving operations to the socket,
- 	// but down not disable send operations yet, in case anything
- 	// needs to finish
  	// shutdown is from <sys/socket.h>
 	HTTP_response response;
-
- 	// make sure all of the requests are filled before shutting down further 
- 	// writes with SHUT_WR ? 
- 	// exit cleanly?
+ 	// shut down receipt of new requests after the shutdown command is given
 	if (request_det.URI == "/shutdown") {
  		shutdown(serv_socket, SHUT_RD);
 		running = false;
@@ -218,7 +212,7 @@ int running = true;
 		perror("Failure binding socket");
 		exit(1);
 	}
-	// mark the server socket as listening for connections
+	// Mark the server socket as listening for connections
 	listen(server_socket_fd, 1);
 	int clilen = sizeof(cli_addr);
 	// accept connection from the queue, forming a new socket
@@ -229,50 +223,47 @@ int running = true;
 		perror("Failure accepting connection");
 		exit(1);
 	}
-	// PLEASE REMOVE THIS SOMETIME IN THE FUTURE 
+	// Introductory message upon connection
 	const char* hello = "henlo";
 	send(new_socket_fd, hello, strlen(hello), 0);
 
-	// Run an infinite loop to listen for messages from a client
+	/* Run an infinite loop to listen for messages from a client. If a shutdown signal is received, 
+	running is set to false and the loop stops looking to receive messages. */
 	while (running == true) {
-		//std::cout<<"\n\n\nNew Read Loop \n\n\n";
+		// Zero the buffer in preparation for client messages
 		memset(buffer, '\0', MAX_MESSAGE_SIZE);   
 
-		// read the commands from the buffer of client desires using rcv
+		// Read requests in from the buffer that holds client messages
 		int msg = recv(new_socket_fd, buffer, MAX_MESSAGE_SIZE, 0);
-		//Cache::index_type val_size = 0;
 		if (msg < 0) {
 			perror("Failure reading from socket");
 			exit(1);
 		}
-		// loop to examine the buffer
+		// Loop to examine the buffer
 		else {
-			// create a new HTTP request and fill it by parsing the characters from the buffer
-			// with a function from HTTP_utilities.hh
+			// Check that buffer is not empty. If it is, keep looping for another message,
+			// using continue to skip verb parsing since there isn't any verb.
 			if (strlen(buffer) == 0) {
 				continue;
 			}
+			// Prep empty HTTP request and response for server-client communications
 			HTTP_request client_request;
 			HTTP_response serv_response;
-			//std::cout<<"buffer is: "<<buffer<<"\n"; // TAKE ME AWAY <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-			//std::cout<<"buffer len: " << strlen(buffer) << "\n";
 			client_request.parse_raw_request(buffer);
-
 			
+			/* Check the verb from the client request and call the corresponding helper function,
+			which operates on the server cache and returns an HTTP response from the server */
 			if (client_request.verb == "GET") {
-				// call the GET helper if GET requested, two possible types of GET handled with helper
+				// two possible types of GET handled with helper
 				serv_response = serv_GET(cache, client_request);
 			} else if (client_request.verb == "PUT") {
-				// call the PUT helper if PUT requested
 				serv_response = serv_PUT(cache, client_request);
 			} else if (client_request.verb == "DELETE") {
-				// call the DEL helper if DELETE requested
 				serv_response = serv_DEL(cache, client_request);
 			} else if (client_request.verb == "HEAD") {
-				// call the HEAD helper if the request is for HEAD to obtain a header 
 				serv_response = serv_HEAD(client_request);
 			} else if (client_request.verb == "POST") {
-				// call the POST helper with server socket, shuts down the server 
+				// serv_POST attempts to close the socket connection and shut down the server. 
 				serv_response = serv_POST(server_socket_fd, client_request);
 			}
 		bool valid_response = check_resp(serv_response);
@@ -280,8 +271,8 @@ int running = true;
 			serv_response.body == "There's been an internal error (empty response)";
 			serv_response.code == "500";
 		}
-		// Use the HTTP_utilities to_cstring() method to convert the proper HTTP response into a 
-		// string passable to the socket communicating with the client. 
+		/* The socket takes c-strings, so we use the HTTP_utilities to_cstring() method to convert 
+		the HTTP response into a string we can pass through the socket. */
 		const char* string_response = (serv_response.to_string()).c_str();
 		// Send the response in the proper c string format to the client
 		send(new_socket_fd, string_response, serv_response.to_string().length(), 0);	
