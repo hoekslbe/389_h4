@@ -59,7 +59,7 @@ struct Cache::Impl {
 		} 
 
 		recv(sock, buffer, MAX_MESSAGE_SIZE, 0);
-		std::cout<<buffer<<"\n";
+		//std::cout<<buffer<<"\n";
 	}
 
 	~Impl() {

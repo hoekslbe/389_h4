@@ -125,7 +125,6 @@ int running = true;
 	}
 
 	//std::cout<<"getting out of serv_Del\n";
-
 	return response;
  }
  // handle HEAD request, HEAD/key/k, returns just a header in 
@@ -273,9 +272,10 @@ int running = true;
 		}
 		/* The socket takes c-strings, so we use the HTTP_utilities to_cstring() method to convert 
 		the HTTP response into a string we can pass through the socket. */
-		const char* string_response = (serv_response.to_string()).c_str();
+		auto a = serv_response.to_string();
+		const char* string_response = a.c_str();
 		// Send the response in the proper c string format to the client
-		send(new_socket_fd, string_response, serv_response.to_string().length(), 0);	
+		send(new_socket_fd, string_response, a.length(), 0);	
 		// At this point, the loop begins again as the socket continues listening for 
 		// requests to fulfill until POST is called to shut down the server.
 		}

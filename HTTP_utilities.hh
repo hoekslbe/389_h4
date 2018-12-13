@@ -7,7 +7,7 @@
 
 //Need to change this to our actual HTTP version (whatever it is).  
 const std::string HTTP_VERSION = "HTTP v1.1";
-const unsigned MAX_MESSAGE_SIZE = 1024;
+const unsigned MAX_MESSAGE_SIZE = 4096;
 
 
 // Takes in a void pointer and an unsigned int, and creates a string out of the first *size* bytes at the void pointer.  

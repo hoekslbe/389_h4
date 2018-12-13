@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <algorithm>
+#include <fstream>
 
 // parameters for indicating request proportions according to desired workload 
 const unsigned GET_PROPORTION = 300; // these shouldn't be 0.  Figure out what they should be according to the memcached workload.  
@@ -16,10 +17,10 @@ const unsigned DEL_PROPORTION = 1;
 const unsigned SPA_PROPORTION = 1;
 
 // block_size is the number of requests in a test.  iterations is the number of tests to run.  
-const unsigned BANDWIDTH_TEST_BLOCK_SIZE = 1000;
-const unsigned BANDWIDTH_TEST_ITERATIONS = 10;
-const unsigned LATENCY_TEST_BLOCK_SIZE = 100;
-const unsigned LATENCY_TEST_ITERATIONS = 100; 
+const unsigned BANDWIDTH_TEST_BLOCK_SIZE = 10000;
+const unsigned BANDWIDTH_TEST_ITERATIONS = 100;
+const unsigned LATENCY_TEST_BLOCK_SIZE = 1000;
+const unsigned LATENCY_TEST_ITERATIONS = 1000; 
 
 
 
@@ -215,44 +216,51 @@ TestParameters assemble_requests_to_measure(KeyValueStore &kvs,
 }
 
 
-std::chrono::duration<double, std::nano> measure_average(Cache &cache, TestParameters &parameters, unsigned iterations) {
-	std::vector<std::chrono::duration<double, std::nano>> test_results;
+std::vector<std::chrono::duration<double, std::milli>> conduct_test(Cache &cache, TestParameters &parameters, unsigned iterations) {
+	std::vector<std::chrono::duration<double, std::milli>> test_results;
 	for (unsigned i = 0; i < iterations; i++) {
-		test_results.push_back(measure_total_time(cache, parameters));
+		test_results.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(measure_total_time(cache, parameters)));
 	}
-	unsigned total_ticks = 0;
-	for (std::chrono::duration<double, std::nano> dur : test_results) {
-		total_ticks += dur.count();
+	/*
+	std::sort(test_results.begin(), test_results.end());
+	unsigned in_of_min = 0;
+	unsigned in_of_25th_percentile = (test_results.size()-1)/4;
+	unsigned in_of_median = (test_results.size()-1)/2;
+	unsigned in_of_75th_percentile = (test_results.size()-1)*3/4;
+	unsigned in_of_max = test_results.size()-1;
+	
+	std::vector<std::chrono::duration<double, std::milli>> out;
+
+	out.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(test_results[in_of_min]));
+	out.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(test_results[in_of_25th_percentile]));
+	out.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(test_results[in_of_median]));
+	out.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(test_results[in_of_75th_percentile]));
+	out.push_back(std::chrono::duration_cast<std::chrono::milliseconds>(test_results[in_of_max]));
+
+	return out;
+	*/
+	return test_results;
+}
+
+// returns requests/ms
+std::vector<double> measure_bandwidth (Cache &cache, TestParameters &parameters) {
+	std::vector<std::chrono::duration<double, std::milli>> results = conduct_test(cache, parameters, BANDWIDTH_TEST_ITERATIONS);
+	//std::reverse(results.begin(), results.end());
+	std::vector<double> out;
+	for (std::chrono::duration<double, std::milli> dur : results) {
+		out.push_back(static_cast<double>(BANDWIDTH_TEST_BLOCK_SIZE) / static_cast<double>(dur.count()));
 	}
-	std::chrono::duration<double, std::nano> out (total_ticks / iterations);
 	return out;
 }
 
-std::chrono::duration<double, std::nano> measure_min(Cache &cache, TestParameters &parameters, unsigned iterations) {
-	std::vector<std::chrono::duration<double, std::nano>> test_results;
-	for (unsigned i = 0; i < iterations; i++) {
-		test_results.push_back(measure_total_time(cache, parameters));
+// returns ms/request
+std::vector<double> measure_latency (Cache &cache, TestParameters &parameters) {
+	std::vector<std::chrono::duration<double, std::milli>> results = conduct_test(cache, parameters, LATENCY_TEST_ITERATIONS);
+	std::vector<double> out;
+	for (std::chrono::duration<double, std::milli> dur : results) {
+		out.push_back(static_cast<double>(dur.count()) / static_cast<double>(LATENCY_TEST_BLOCK_SIZE));
 	}
-	unsigned in_of_min = 0;
-	unsigned min_count = test_results[in_of_min].count();
-	for (unsigned i = 1; i < iterations; i++) {
-		unsigned candidate_count = test_results[i].count();
-		if (candidate_count < min_count) {
-			in_of_min = i;
-			min_count = candidate_count;
-		}
-	}
-	return test_results[in_of_min];
-}
-
-// returns requests/ns
-double measure_bandwidth (Cache &cache, TestParameters &parameters) {
-	return static_cast<double>(BANDWIDTH_TEST_BLOCK_SIZE) / static_cast<double>(measure_average(cache, parameters, BANDWIDTH_TEST_ITERATIONS).count());
-}
-
-// returns ns/request
-double measure_latency (Cache &cache, TestParameters &parameters) {
-	return static_cast<double>(measure_min(cache, parameters, LATENCY_TEST_ITERATIONS).count()) / static_cast<double>(LATENCY_TEST_BLOCK_SIZE);
+	return out;
 }
 
 // what command line arguments will we need?
@@ -278,72 +286,37 @@ int main() {
 	RequestDistribution only_SET(0, 1, 0, 0);
 	RequestDistribution only_DEL(0, 0, 1, 0);
 	RequestDistribution only_SPA(0, 0, 0, 1);
-
-	std::vector<std::string> small_keys {"key1", "key2", "key3"};
-	std::vector<std::string> large_keys {"reallyextremelymuchmuchlarger|key1", "reallyextremelymuchmuchlarger|key2", "reallyextremelymuchmuchlarger|key3"};
-	std::vector<std::string> small_values {"valueNumber1", "valueNumber2", "valueNumber3"} ;
-	std::vector<std::string> large_values {"abcdefghijklmnopqrstuvwxyz|ValueNumber1|zyxwvutsrqponmlkjihgfedcba", 
-											"abcdefghijklmnopqrstuvwxyz|ValueNumber2|zyxwvutsrqponmlkjihgfedcba", 
-											"abcdefghijklmnopqrstuvwxyz|ValueNumber3|zyxwvutsrqponmlkjihgfedcba"} ;
-	KeyValueStore sk_sv(small_keys, small_values);
-	KeyValueStore sk_lv(small_keys, large_values);
-	KeyValueStore lk_sv(large_keys, large_values);
-	KeyValueStore lk_lv(large_keys, large_values);
-
-	TestParameters case_1 = assemble_requests_to_measure(sk_sv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
-	TestParameters case_2 = assemble_requests_to_measure(sk_lv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
-	TestParameters case_3 = assemble_requests_to_measure(lk_sv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
-	TestParameters case_4 = assemble_requests_to_measure(lk_lv, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
-
-	TestParameters case_5 = assemble_requests_to_measure(sk_sv, only_GET, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_6 = assemble_requests_to_measure(sk_lv, only_GET, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_7 = assemble_requests_to_measure(lk_sv, only_GET, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_8 = assemble_requests_to_measure(lk_lv, only_GET, LATENCY_TEST_BLOCK_SIZE);
-
-	TestParameters case_9  = assemble_requests_to_measure(sk_sv, only_SET, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_10 = assemble_requests_to_measure(sk_lv, only_SET, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_11 = assemble_requests_to_measure(lk_sv, only_SET, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_12 = assemble_requests_to_measure(lk_lv, only_SET, LATENCY_TEST_BLOCK_SIZE);
-
-	TestParameters case_13 = assemble_requests_to_measure(sk_sv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_14 = assemble_requests_to_measure(sk_lv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_15 = assemble_requests_to_measure(lk_sv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_16 = assemble_requests_to_measure(lk_lv, only_DEL, LATENCY_TEST_BLOCK_SIZE);
-
-	TestParameters case_17 = assemble_requests_to_measure(sk_sv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_18 = assemble_requests_to_measure(sk_lv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_19 = assemble_requests_to_measure(lk_sv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
-	TestParameters case_20 = assemble_requests_to_measure(lk_lv, only_SPA, LATENCY_TEST_BLOCK_SIZE);
-
-	// rpns - requests per nanosecond 
-
-	double case_1_rpns = measure_bandwidth(cache, case_1);
-	double case_2_rpns = measure_bandwidth(cache, case_2);
-	double case_3_rpns = measure_bandwidth(cache, case_3);
-	double case_4_rpns = measure_bandwidth(cache, case_4);
-
-	// nspr - nanoseconds per request
-
-	double case_5_nspr = measure_latency(cache, case_5);
-	double case_6_nspr = measure_latency(cache, case_6);
-	double case_7_nspr = measure_latency(cache, case_7);
-	double case_8_nspr = measure_latency(cache, case_8);
-
-	double case_9_nspr  = measure_latency(cache, case_9);
-	double case_10_nspr = measure_latency(cache, case_10);
-	double case_11_nspr = measure_latency(cache, case_11);
-	double case_12_nspr = measure_latency(cache, case_12);
-	
-	double case_13_nspr = measure_latency(cache, case_13);
-	double case_14_nspr = measure_latency(cache, case_14);
-	double case_15_nspr = measure_latency(cache, case_15);
-	double case_16_nspr = measure_latency(cache, case_16);
-	
-	double case_17_nspr = measure_latency(cache, case_17);
-	double case_18_nspr = measure_latency(cache, case_18);
-	double case_19_nspr = measure_latency(cache, case_19);
-	double case_20_nspr = measure_latency(cache, case_20);
 	
 
+	std::vector<std::string> keys {"00key100", "00key200", "00key300", "00key400"};
+	std::vector<std::string> values {"00000value100000", "00000value200000", "00000value300000", "00000value300000"};
+
+	KeyValueStore kvs(keys, values);
+	TestParameters case_1 = assemble_requests_to_measure(kvs, proportioned, BANDWIDTH_TEST_BLOCK_SIZE);
+	TestParameters case_2 = assemble_requests_to_measure(kvs, only_GET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_3 = assemble_requests_to_measure(kvs, only_SET, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_4 = assemble_requests_to_measure(kvs, only_DEL, LATENCY_TEST_BLOCK_SIZE);
+	TestParameters case_5 = assemble_requests_to_measure(kvs, only_SPA, LATENCY_TEST_BLOCK_SIZE);
+
+	auto case_1_results = measure_bandwidth(cache, case_1);
+	auto case_2_results = measure_latency(cache, case_2);
+	auto case_3_results = measure_latency(cache, case_3);
+	auto case_4_results = measure_latency(cache, case_4);
+	auto case_5_results = measure_latency(cache, case_5);
+	
+	std::ofstream bandwidth_results;
+	bandwidth_results.open("bandwidth_results.csv");
+	bandwidth_results << "#Bandwidth results (requests/millisecond):\n";
+	for (unsigned i = 0; i < case_1_results.size(); i++) {bandwidth_results<<case_1_results[i]<< "\n";}
+	bandwidth_results.close();
+
+	std::ofstream latency_results;
+	latency_results.open("latency_results.csv");
+	latency_results << "#Latency results (milliseconds/request):\n#GET\tSET\tDEL\tSPA\n";
+	for (unsigned i = 0; i < case_1_results.size(); i++) {
+		latency_results << case_2_results[i] << "\t" << case_3_results[i] << "\t" << case_4_results[i] << "\t" << case_5_results[i] << "\n";
+	}
+	latency_results.close();
+	
 	return 1;
 }
