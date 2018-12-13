@@ -313,7 +313,7 @@ int main() {
 	std::ofstream latency_results;
 	latency_results.open("latency_results.csv");
 	latency_results << "#Latency results (milliseconds/request):\n#GET\tSET\tDEL\tSPA\n";
-	for (unsigned i = 0; i < case_1_results.size(); i++) {
+	for (unsigned i = 0; i < case_2_results.size(); i++) {
 		latency_results << case_2_results[i] << "\t" << case_3_results[i] << "\t" << case_4_results[i] << "\t" << case_5_results[i] << "\n";
 	}
 	latency_results.close();
